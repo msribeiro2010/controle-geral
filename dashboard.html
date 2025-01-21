@@ -6,21 +6,57 @@
     <title>Dashboard - Sistema de Férias</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     
     <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
+        import { getAuth, signOut } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAnPLwZO5i_Ky0nBfI14gzNsRqvVMIOqdk",
+            authDomain: "controle-func.firebaseapp.com",
+            databaseURL: "https://controle-func-default-rtdb.firebaseio.com",
+            projectId: "controle-func",
+            storageBucket: "controle-func.firebasestorage.app",
+            messagingSenderId: "146164640694",
+            appId: "1:146164640694:web:d52beaeaa4b1b38cc76f17"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // Botão de sair
+        document.getElementById('btnLogout').addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                localStorage.removeItem('usuarioLogado');
+                window.location.href = 'index.html';
+            } catch (error) {
+                console.error('Erro ao sair:', error);
+                alert('Não foi possível sair. Tente novamente.');
+            }
+        });
+    </script>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Sistema de Gestão de Férias</h1>
-            <div class="header-actions">
-                <a href="feriados.html" class="btn-feriados">Feriados 2025</a>
-                <button id="btnLogout">Sair</button>
+            <div class="header-content">
+                <h1>Painel de Férias</h1>
+                <button id="btnLogout" class="btn-logout">
+                    <i class="fas fa-sign-out-alt"></i> Sair
+                </button>
             </div>
         </header>
+
+        <div class="dashboard-buttons">
+            <button onclick="window.location.href='calendario-ferias.html'" class="btn-calendario">
+                <i class="fas fa-calendar-alt"></i> Calendário de Férias
+            </button>
+        </div>
 
         <div class="employee-info-container">
             <div class="employee-info">

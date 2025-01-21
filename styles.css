@@ -459,6 +459,57 @@ input[type="date"], input[type="number"] {
     }
 }
 
+/* Botão de Calendário */
+.dashboard-buttons {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.btn-calendario {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.btn-calendario:hover {
+    background-color: #2980b9;
+}
+
+.btn-calendario i {
+    font-size: 20px;
+}
+
+/* Botão de Logout */
+.btn-logout {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.3s ease;
+}
+
+.btn-logout:hover {
+    background-color: #c0392b;
+}
+
+.btn-logout i {
+    font-size: 16px;
+}
+
 /* Rodapé */
 footer {
     text-align: center;

@@ -2,6 +2,27 @@
 const USUARIO_KEY = 'usuarioLogado';
 const USUARIOS_KEY = 'usuarios';
 
+// Adicionar importações do Firebase no topo do arquivo
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
+import { getAuth } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
+import { getDatabase, ref, update } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js';
+
+// Configuração do Firebase
+const firebaseConfig = {
+    apiKey: "AIzaSyAnPLwZO5i_Ky0nBfI14gzNsRqvVMIOqdk",
+    authDomain: "controle-func.firebaseapp.com",
+    databaseURL: "https://controle-func-default-rtdb.firebaseio.com",
+    projectId: "controle-func",
+    storageBucket: "controle-func.firebasestorage.app",
+    messagingSenderId: "146164640694",
+    appId: "1:146164640694:web:d52beaeaa4b1b38cc76f17"
+};
+
+// Inicializar Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const database = getDatabase(app);
+
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('Dashboard: Evento DOMContentLoaded disparado');
 
@@ -330,7 +351,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Formulário de adição de férias
     if (adicionarFeriasForm) {
-        adicionarFeriasForm.addEventListener('submit', (e) => {
+        adicionarFeriasForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const dataInicio = dataInicioInput.value;
@@ -394,13 +415,27 @@ document.addEventListener('DOMContentLoaded', async () => {
                 localStorage.setItem(USUARIOS_KEY, JSON.stringify(usuarios));
             }
 
-            // Atualizar visualização
-            atualizarSaldoFerias();
-            atualizarTabelaHistorico();
+            try {
+                // Salvar no Firebase
+                const userId = auth.currentUser.uid;
+                await update(ref(database, 'users/' + userId), {
+                    feriasUtilizadas: feriasUtilizadas,
+                    historicoFerias: historicoFerias
+                });
 
-            // Limpar formulário
-            adicionarFeriasForm.reset();
-            diasFeriasInput.value = '';
+                // Atualizar visualização
+                atualizarSaldoFerias();
+                atualizarTabelaHistorico();
+
+                // Limpar formulário
+                dataInicioInput.value = '';
+                dataFimInput.value = '';
+                diasFeriasInput.value = '';
+
+            } catch (error) {
+                console.error('Erro ao salvar férias:', error);
+                alert('Não foi possível salvar as férias. Tente novamente.');
+            }
         });
     } else {
         console.error('Formulário de adicionar férias não encontrado');
