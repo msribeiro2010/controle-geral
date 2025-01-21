@@ -5,7 +5,7 @@ const USUARIOS_KEY = 'usuarios';
 // Adicionar importações do Firebase no topo do arquivo
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
 import { getAuth } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
-import { getDatabase, ref, update } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js';
+import { getDatabase, ref, update, get } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js';
 
 // Configuração do Firebase
 const firebaseConfig = {
