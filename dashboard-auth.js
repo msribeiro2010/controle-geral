@@ -2,10 +2,18 @@
 const USUARIO_KEY = 'usuarioLogado';
 const USUARIOS_KEY = 'usuarios';
 
-// Adicionar importações do Firebase no topo do arquivo
+// Importações do Firebase
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
-import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
-import { getDatabase, ref, update, get, child } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js';
+import { 
+    getAuth, 
+    onAuthStateChanged 
+} from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
+import { 
+    getDatabase, 
+    ref, 
+    update, 
+    get 
+} from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js';
 
 // Configuração do Firebase
 const firebaseConfig = {
@@ -234,13 +242,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         atualizarSaldoFerias();
         atualizarTabelaHistorico();
 
-        // Verificar se usuário está logado
-        const usuarioLogado = JSON.parse(localStorage.getItem(USUARIO_KEY));
-        
         // Log de depuração do usuário logado
-        console.log('Usuário Logado (JSON):', usuarioLogado);
-        console.log('Tipo de usuarioLogado:', typeof usuarioLogado);
-        console.log('Chaves de usuarioLogado:', usuarioLogado ? Object.keys(usuarioLogado) : 'Nenhuma');
+        console.log('Usuário:', usuarioLogado);
+        console.log('Tipo de usuário:', typeof usuarioLogado);
+        console.log('Chaves do usuário:', Object.keys(usuarioLogado));
 
         // Verificar dados do localStorage
         console.log('Dados no localStorage:', {
@@ -409,18 +414,24 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // Atualizar localStorage
                 localStorage.setItem(USUARIO_KEY, JSON.stringify(usuarioLogado));
 
-                // Atualizar lista de usuários
-                const usuarios = JSON.parse(localStorage.getItem(USUARIOS_KEY) || '[]');
-                const usuarioIndex = usuarios.findIndex(u => u.username === usuarioLogado.username);
-                
-                if (usuarioIndex !== -1) {
-                    usuarios[usuarioIndex] = usuarioLogado;
-                    localStorage.setItem(USUARIOS_KEY, JSON.stringify(usuarios));
-                }
+                try {
+                    // Salvar no Firebase
+                    const userId = user.uid;
+                    await update(ref(database, 'users/' + userId), {
+                        feriasUtilizadas: feriasUtilizadas,
+                        historicoFerias: historicoFerias
+                    });
 
-                // Atualizar visualização
-                atualizarSaldoFerias();
-                atualizarTabelaHistorico();
+                    console.log('Férias salvas com sucesso no Firebase');
+
+                    // Atualizar visualização
+                    atualizarSaldoFerias();
+                    atualizarTabelaHistorico();
+
+                } catch (error) {
+                    console.error('Erro ao salvar férias:', error);
+                    alert('Não foi possível salvar as férias. Tente novamente.');
+                }
             }
         }
 
