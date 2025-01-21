@@ -103,8 +103,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             email: user.email
         };
 
-        console.log('Usuário logado:', usuarioLogado);
-
         // Variáveis para controle de férias
         let totalFerias = usuarioLogado.totalFerias || 30;
         let feriasUtilizadas = usuarioLogado.feriasUtilizadas || 0;
