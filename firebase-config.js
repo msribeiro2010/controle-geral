@@ -1,14 +1,22 @@
-// Configuração do Firebase
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-    apiKey: "AIzaSyDQrfasdfsadfasdfasdfasdfasdfasdf",
-    authDomain: "sistema-ferias-2025.firebaseapp.com",
-    projectId: "sistema-ferias-2025",
-    storageBucket: "sistema-ferias-2025.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "1:123456789:web:abcdefghijklmnop"
+  apiKey: "AIzaSyAnPLwZO5i_Ky0nBfI14gzNsRqvVMIOqdk",
+  authDomain: "controle-func.firebaseapp.com",
+  databaseURL: "https://controle-func-default-rtdb.firebaseio.com",
+  projectId: "controle-func",
+  storageBucket: "controle-func.firebasestorage.app",
+  messagingSenderId: "146164640694",
+  appId: "1:146164640694:web:d52beaeaa4b1b38cc76f17",
+  measurementId: "G-2LQHMZS6XH"
 };
 
-// Inicializar Firebase
-firebase.initializeApp(firebaseConfig);
-const database = firebase.database();
-const auth = firebase.auth();
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
