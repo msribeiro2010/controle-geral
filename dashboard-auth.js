@@ -56,9 +56,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     let saldoFeriasElement = document.getElementById('saldoFerias');
 
     // Elementos do dashboard
-    const nomeUsuarioElement = document.getElementById('nomeUsuario');
-    const usernameElement = document.getElementById('username');
-    const emailElement = document.getElementById('email');
+    const nomeUsuarioElement = document.getElementById('employee-name');
+    const usernameElement = document.getElementById('employee-username');
+    const emailElement = document.getElementById('employee-email');
 
     // Função para calcular dias de férias
     function calcularDiasFerias() {
@@ -156,11 +156,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // Função para formatar data no padrão brasileiro
+    // Função para formatar data no padrão DD/MM/YYYY
     function formatarData(dataString) {
-        if (!dataString) return '';
-        let data = new Date(dataString);
-        return data.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+        if (!dataString) return 'Data inválida';
+        const [ano, mes, dia] = dataString.split('-');
+        return `${dia}/${mes}/${ano}`;
     }
 
     // Observador de autenticação
@@ -191,16 +191,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Atualizar elementos do dashboard
         if (nomeUsuarioElement) {
             nomeUsuarioElement.textContent = usuarioLogado.nome || 'Nome não disponível';
-        }
-        if (usernameElement) {
-            usernameElement.textContent = usuarioLogado.username || 'Username não disponível';
-        }
-        if (emailElement) {
-            emailElement.textContent = usuarioLogado.email || 'Email não disponível';
+            console.log('Nome do usuário atualizado:', nomeUsuarioElement.textContent);
+        } else {
+            console.error('Elemento nomeUsuario não encontrado');
         }
 
-        // Atualizar localStorage
-        localStorage.setItem(USUARIO_KEY, JSON.stringify(usuarioLogado));
+        if (usernameElement) {
+            usernameElement.textContent = usuarioLogado.username || 'Username não disponível';
+            console.log('Username atualizado:', usernameElement.textContent);
+        } else {
+            console.error('Elemento username não encontrado');
+        }
+
+        if (emailElement) {
+            emailElement.textContent = usuarioLogado.email || 'Email não disponível';
+            console.log('Email atualizado:', emailElement.textContent);
+        } else {
+            console.error('Elemento email não encontrado');
+        }
 
         // Variáveis para controle de férias
         let totalFerias = usuarioLogado.totalFerias || 30;
@@ -365,16 +373,22 @@ document.addEventListener('DOMContentLoaded', async () => {
                 historicoFerias.forEach((entry, index) => {
                     console.log('Renderizando entrada:', entry);
                     const linha = document.createElement('tr');
+                    
+                    // Formatar datas para exibição
+                    const dataInicioFormatada = formatarData(entry.dataInicio);
+                    const dataFimFormatada = formatarData(entry.dataFim);
+
                     linha.innerHTML = `
-                        <td>${entry.dataInicio}</td>
-                        <td>${entry.dataFim}</td>
+                        <td>${entry.periodo}</td>
+                        <td>${dataInicioFormatada}</td>
+                        <td>${dataFimFormatada}</td>
                         <td>${entry.diasFerias} dias</td>
                         <td>
                             <button onclick="editarPeriodoFerias(${index})" class="btn-editar">
-                                <i class="fas fa-edit"></i>
+                                <i class="fas fa-edit"></i> Editar
                             </button>
                             <button onclick="excluirPeriodoFerias(${index})" class="btn-excluir">
-                                <i class="fas fa-trash"></i>
+                                <i class="fas fa-trash"></i> Excluir
                             </button>
                         </td>
                     `;
