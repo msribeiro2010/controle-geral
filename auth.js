@@ -1,6 +1,16 @@
-<script src="https://cdn.firebase.com/libs/firebase/9.1.3/firebase-app.js"></script>
-<script src="https://cdn.firebase.com/libs/firebase/9.1.3/firebase-auth.js"></script>
-<script src="https://cdn.firebase.com/libs/firebase/9.1.3/firebase-database.js"></script>
+// Importações do Firebase
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
+import { 
+    getAuth, 
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword 
+} from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
+import { 
+    getDatabase,
+    ref,
+    set,
+    get
+} from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     // Inicializar Firebase
@@ -13,9 +23,9 @@ document.addEventListener('DOMContentLoaded', () => {
         appId: "1:123456789:web:abcdefghijklmnop"
     };
 
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const database = firebase.database();
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const database = getDatabase(app);
 
     const loginForm = document.getElementById('loginForm');
     const registroForm = document.getElementById('registroForm');
@@ -51,12 +61,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            const userCredential = await auth.createUserWithEmailAndPassword(email, senha);
+            const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
             const user = userCredential.user;
 
             // Salvar dados adicionais do usuário no Realtime Database
-            const userRef = database.ref('users/' + user.uid);
-            userRef.set({
+            const userRef = ref(database, 'users/' + user.uid);
+            await set(userRef, {
                 nome: nome,
                 email: email,
                 totalFerias: 30,
@@ -78,31 +88,54 @@ document.addEventListener('DOMContentLoaded', () => {
     // Login de usuário
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        
+        // Mostrar loading
+        const loadingOverlay = document.querySelector('.loading-overlay');
+        if (loadingOverlay) loadingOverlay.style.display = 'flex';
+        loginMensagem.textContent = 'Realizando login...';
+        loginMensagem.style.color = 'blue';
+        
         const email = document.getElementById('loginEmail').value;
         const senha = document.getElementById('loginSenha').value;
 
         try {
-            const userCredential = await auth.signInWithEmailAndPassword(email, senha);
+            // Adicionar timeout de 15 segundos
+            const loginPromise = signInWithEmailAndPassword(auth, email, senha);
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Timeout: O login demorou muito tempo')), 15000)
+            );
+
+            const userCredential = await Promise.race([loginPromise, timeoutPromise]);
             const user = userCredential.user;
 
-            // Buscar dados adicionais do usuário no Realtime Database
-            const userRef = database.ref('users/' + user.uid);
-            userRef.once('value').then((snapshot) => {
-                const userData = snapshot.val();
-                localStorage.setItem('usuarioLogado', JSON.stringify({
-                    uid: user.uid,
-                    email: user.email,
-                    nome: userData.nome,
-                    totalFerias: userData.totalFerias,
-                    feriasUtilizadas: userData.feriasUtilizadas,
-                    historicoFerias: userData.historicoFerias
-                }));
-                window.location.href = 'dashboard.html';
-            });
+            // Buscar dados do usuário
+            const userRef = ref(database, 'users/' + user.uid);
+            const snapshot = await get(userRef);
+            const userData = snapshot.val();
 
+            if (!userData) {
+                throw new Error('Dados do usuário não encontrados');
+            }
+
+            localStorage.setItem('usuarioLogado', JSON.stringify({
+                uid: user.uid,
+                email: user.email,
+                nome: userData.nome,
+                totalFerias: userData.totalFerias,
+                feriasUtilizadas: userData.feriasUtilizadas,
+                historicoFerias: userData.historicoFerias
+            }));
+
+            window.location.href = 'dashboard.html';
         } catch (error) {
-            loginMensagem.textContent = 'Credenciais inválidas. Tente novamente.';
             console.error('Erro de login:', error);
+            loginMensagem.textContent = error.message === 'Timeout: O login demorou muito tempo'
+                ? 'O login está demorando muito. Por favor, tente novamente.'
+                : 'Erro ao fazer login. Verifique seu email e senha.';
+            loginMensagem.style.color = 'red';
+            
+            // Esconder loading
+            if (loadingOverlay) loadingOverlay.style.display = 'none';
         }
     });
 });

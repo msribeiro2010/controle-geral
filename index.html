@@ -44,44 +44,84 @@
         // Login Form
         const loginForm = document.getElementById('loginForm');
         const loginMensagem = document.getElementById('login-mensagem');
+        const loadingOverlay = document.querySelector('.loading-overlay');
 
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const username = document.getElementById('loginUsername').value;
             const senha = document.getElementById('loginSenha').value;
 
+            // Mostrar loading
+            loadingOverlay.style.display = 'flex';
+            loginMensagem.textContent = 'Realizando login...';
+            loginMensagem.className = '';
+
             try {
-                // Buscar usuário pelo username
-                const snapshot = await get(child(dbRef, 'users'));
-                const users = snapshot.val();
+                // Buscar email do usuário pelo username
+                const usersRef = ref(database, 'users');
+                const usersSnapshot = await get(usersRef);
                 
-                const userEntry = Object.entries(users).find(([uid, userData]) => 
-                    userData.username === username
+                let userEmail = null;
+                let userData = null;
+                
+                usersSnapshot.forEach((childSnapshot) => {
+                    const user = childSnapshot.val();
+                    if (user.username === username) {
+                        userEmail = user.email;
+                        userData = user;
+                        return true; // Break the forEach loop
+                    }
+                });
+
+                if (!userEmail) {
+                    throw new Error('Usuário não encontrado');
+                }
+
+                // Adicionar timeout de 15 segundos
+                const loginPromise = signInWithEmailAndPassword(auth, userEmail, senha);
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Timeout: O login demorou muito tempo')), 15000)
                 );
 
-                if (userEntry) {
-                    const [uid, userData] = userEntry;
-                    const userCredential = await signInWithEmailAndPassword(auth, userData.email, senha);
-                    const user = userCredential.user;
+                const userCredential = await Promise.race([loginPromise, timeoutPromise]);
+                const user = userCredential.user;
 
-                    localStorage.setItem('usuarioLogado', JSON.stringify({
-                        uid: user.uid,
-                        email: user.email,
-                        nome: userData.nome,
-                        username: userData.username,
-                        totalFerias: userData.totalFerias,
-                        feriasUtilizadas: userData.feriasUtilizadas,
-                        historicoFerias: userData.historicoFerias
-                    }));
-                    window.location.href = 'dashboard.html';
-                } else {
-                    loginMensagem.textContent = 'Usuário não encontrado.';
-                    loginMensagem.style.color = 'red';
-                }
+                // Salvar dados do usuário no localStorage
+                localStorage.setItem('usuarioLogado', JSON.stringify({
+                    uid: user.uid,
+                    email: user.email,
+                    nome: userData.nome,
+                    username: userData.username,
+                    totalFerias: userData.totalFerias || 30,
+                    feriasUtilizadas: userData.feriasUtilizadas || 0,
+                    historicoFerias: userData.historicoFerias || []
+                }));
+
+                // Redirecionar para o dashboard
+                window.location.href = 'dashboard.html';
             } catch (error) {
-                loginMensagem.textContent = 'Erro de login: ' + error.message;
-                loginMensagem.style.color = 'red';
                 console.error('Erro de login:', error);
+                
+                // Tratar mensagens de erro específicas
+                let mensagemErro = 'Erro ao fazer login. Tente novamente.';
+                
+                if (error.message === 'Timeout: O login demorou muito tempo') {
+                    mensagemErro = 'O login está demorando muito. Por favor, tente novamente.';
+                } else if (error.message === 'Usuário não encontrado') {
+                    mensagemErro = 'Usuário não encontrado.';
+                } else if (error.code === 'auth/wrong-password') {
+                    mensagemErro = 'Senha incorreta.';
+                } else if (error.code === 'auth/user-not-found') {
+                    mensagemErro = 'Usuário não encontrado.';
+                } else if (error.code === 'auth/too-many-requests') {
+                    mensagemErro = 'Muitas tentativas de login. Tente novamente mais tarde.';
+                }
+
+                loginMensagem.textContent = mensagemErro;
+                loginMensagem.className = 'error-message';
+                
+                // Esconder loading
+                loadingOverlay.style.display = 'none';
             }
         });
 
@@ -259,9 +299,65 @@
             text-align: center;
             margin-top: 15px;
         }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #333;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            margin-top: 10px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .success-message {
+            color: #2ecc71;
+            margin-top: 10px;
+            font-size: 14px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Realizando login...</div>
+    </div>
+
     <div class="login-container">
         <div class="login-wrapper">
             <div class="login-header">
