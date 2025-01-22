@@ -151,25 +151,44 @@ document.addEventListener('DOMContentLoaded', async () => {
         async function adicionarPeriodoFerias(event) {
             event.preventDefault();
             
+            console.group('🏖️ Adicionar Período de Férias');
+            console.log('Evento recebido:', event);
+
+            // Verificar se os elementos existem
+            if (!dataInicioInput || !dataFimInput || !diasFeriasInput) {
+                console.error('🚨 Elementos de input não encontrados', {
+                    dataInicioInput,
+                    dataFimInput,
+                    diasFeriasInput
+                });
+                alert('Erro: Elementos do formulário não encontrados.');
+                console.groupEnd();
+                return;
+            }
+            
             const dataInicio = dataInicioInput.value;
             const dataFim = dataFimInput.value;
             const diasFerias = parseInt(diasFeriasInput.value);
 
-            console.group('Adicionar Período de Férias');
-            console.log('Dados de entrada:', { dataInicio, dataFim, diasFerias });
+            console.log('📅 Dados de entrada:', { 
+                dataInicio, 
+                dataFim, 
+                diasFerias 
+            });
+
+            // Validações
+            if (!dataInicio || !dataFim || isNaN(diasFerias)) {
+                console.error('🚫 Dados inválidos');
+                alert('Por favor, preencha todos os campos corretamente.');
+                console.groupEnd();
+                return;
+            }
+
             console.log('Estado atual:', { 
                 totalFerias, 
                 feriasUtilizadas, 
                 historicoFerias 
             });
-
-            // Validações
-            if (!dataInicio || !dataFim || isNaN(diasFerias)) {
-                console.error('Dados inválidos');
-                alert('Por favor, preencha todos os campos corretamente.');
-                console.groupEnd();
-                return;
-            }
 
             // Criar período formatado
             const periodo = `${formatarData(dataInicio)} a ${formatarData(dataFim)}`;
@@ -308,6 +327,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             adicionarFeriasForm.removeEventListener('submit', adicionarPeriodoFerias);
             adicionarFeriasForm.addEventListener('submit', adicionarPeriodoFerias);
             console.log('Event listener de adicionar férias configurado');
+            console.log('Formulário:', adicionarFeriasForm);
+            console.log('Inputs:', {
+                dataInicio: dataInicioInput,
+                dataFim: dataFimInput,
+                diasFerias: diasFeriasInput
+            });
+        } else {
+            console.error('Formulário de férias não encontrado');
         }
 
         // Chamar funções iniciais
