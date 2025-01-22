@@ -540,89 +540,41 @@ input[type="email"]:invalid:not(:placeholder-shown) {
     color: white;
 }
 
-/* Botão de Feriados */
-.btn-feriados {
-    background-color: #2196F3;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
+/* Header Buttons */
+.header-buttons {
     display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.btn-feriados:hover {
-    background-color: #1976D2;
-}
-
-/* Botão de Calendário */
-.dashboard-buttons {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 20px;
-}
-
-.btn-calendario {
-    background-color: #3498db;
-    color: white;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: background-color 0.3s ease;
-    display: flex;
-    align-items: center;
     gap: 10px;
+    align-items: center;
 }
 
-.btn-calendario:hover {
-    background-color: #2980b9;
-}
-
-.btn-calendario i {
-    font-size: 20px;
-}
-
-/* Botão de Logout */
-.btn-logout {
-    background-color: #e74c3c;
+.btn-header {
+    background-color: #3182ce;
     color: white;
     border: none;
-    padding: 10px 15px;
+    padding: 8px 15px;
     border-radius: 6px;
     cursor: pointer;
     display: flex;
     align-items: center;
     gap: 8px;
-    transition: background-color 0.3s ease;
-}
-
-.btn-logout:hover {
-    background-color: #c0392b;
-}
-
-.btn-logout i {
-    font-size: 16px;
-}
-
-/* Rodapé */
-footer {
-    text-align: center;
-    margin-top: 20px;
-    color: #6c757d;
     font-size: 0.9rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    padding: 15px 0;
-    background-color: #f8f9fa;
-    border-top: 1px solid #e9ecef;
+    transition: all 0.2s ease;
+}
+
+.btn-header:hover {
+    background-color: #2c5282;
+    transform: translateY(-1px);
+}
+
+.btn-header i {
+    font-size: 1rem;
+}
+
+/* Remover estilos antigos */
+.btn-feriados,
+.btn-config,
+.btn-logout {
+    display: none;
 }
 
 /* Responsividade */
@@ -658,6 +610,32 @@ footer {
     .feriados-container h3 {
         font-size: 1.2rem;
         padding: 15px;
+    }
+
+    .header-buttons {
+        gap: 5px;
+    }
+
+    .btn-header {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+
+    .btn-header i {
+        font-size: 0.9rem;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .header-buttons {
+        flex-direction: column;
+        width: 100%;
+        gap: 5px;
+    }
+
+    .btn-header {
+        width: 100%;
+        justify-content: center;
     }
 }
 
@@ -878,41 +856,6 @@ footer {
     font-size: 0.9rem;
 }
 
-/* Responsividade */
-@media screen and (max-width: 768px) {
-    .modal-feriados {
-        width: 95%;
-        max-height: 85vh;
-        margin: 20px;
-    }
-
-    .modal-header {
-        padding: 20px;
-    }
-
-    .modal-title h2 {
-        font-size: 1.4rem;
-    }
-
-    .modal-body {
-        padding: 15px;
-        grid-template-columns: 1fr;
-        gap: 15px;
-    }
-
-    .mes-header {
-        padding: 12px 15px;
-    }
-
-    .mes-numero {
-        font-size: 1.5rem;
-    }
-
-    .mes-header h3 {
-        font-size: 1.2rem;
-    }
-}
-
 /* Scrollbar personalizada */
 .modal-feriados::-webkit-scrollbar {
     width: 8px;
@@ -945,84 +888,6 @@ footer {
 .tipo.municipal { background: #fff3e0; color: #ef6c00; }
 .tipo.recesso { background: #fce4ec; color: #c2185b; }
 
-/* Header */
-.header-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-}
-
-.header-buttons {
-    display: flex;
-    gap: 15px;
-    align-items: center;
-}
-
-/* Estilos para os botões de ação na tabela */
-.acoes {
-    display: flex;
-    gap: 8px;
-    justify-content: center;
-}
-
-.btn-editar,
-.btn-excluir {
-    padding: 6px 10px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.btn-editar {
-    background-color: #2196F3;
-    color: white;
-}
-
-.btn-excluir {
-    background-color: #f44336;
-    color: white;
-}
-
-.btn-editar:hover {
-    background-color: #1976D2;
-}
-
-.btn-excluir:hover {
-    background-color: #d32f2f;
-}
-
-.btn-editar:disabled,
-.btn-excluir:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
-    opacity: 0.7;
-}
-
-/* Tooltip para botões desabilitados */
-[disabled] {
-    position: relative;
-}
-
-[disabled]:hover::after {
-    content: 'Não é possível modificar períodos aprovados';
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: #333;
-    color: white;
-    padding: 5px 10px;
-    border-radius: 4px;
-    font-size: 12px;
-    white-space: nowrap;
-    z-index: 1;
-}
-
 /* Estilo geral do dashboard */
 .dashboard-container {
     display: grid;
@@ -1044,4 +909,117 @@ footer {
         margin-left: 0;
         margin-top: 2px;
     }
+}
+
+/* Configurações Container */
+.configuracoes-container {
+    display: grid;
+    gap: 30px;
+    padding: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.config-section {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.config-section h2 {
+    color: #2d3748;
+    font-size: 1.4rem;
+    margin-bottom: 25px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #edf2f7;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.config-section h2 i {
+    color: #3182ce;
+}
+
+.config-form {
+    display: grid;
+    gap: 20px;
+}
+
+.password-input {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-input input {
+    padding-right: 40px;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 10px;
+    background: none;
+    border: none;
+    color: #718096;
+    cursor: pointer;
+    padding: 5px;
+}
+
+.toggle-password:hover {
+    color: #2d3748;
+}
+
+.btn-salvar {
+    background: linear-gradient(135deg, #3182ce, #2b6cb0);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.btn-salvar:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(49, 130, 206, 0.2);
+}
+
+/* Responsividade */
+@media screen and (max-width: 768px) {
+    .configuracoes-container {
+        padding: 10px;
+    }
+
+    .config-section {
+        padding: 20px;
+    }
+
+    .config-section h2 {
+        font-size: 1.2rem;
+    }
+}
+
+.btn-config {
+    background-color: #4a5568;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.btn-config:hover {
+    background-color: #2d3748;
 }

@@ -612,10 +612,30 @@ document.addEventListener('DOMContentLoaded', async () => {
             adicionarFeriasForm.addEventListener('submit', adicionarPeriodoFerias);
         }
 
-        // Adicionar evento ao botão de feriados
-        const btnFeriados = document.getElementById('btnFeriados');
-        if (btnFeriados) {
-            btnFeriados.addEventListener('click', abrirModalFeriados);
+        // Reorganizar os botões no header
+        const headerButtons = document.querySelector('.header-buttons');
+        if (headerButtons) {
+            headerButtons.innerHTML = `
+                <button id="btnFeriados" class="btn-header">
+                    <i class="fas fa-calendar"></i> Feriados
+                </button>
+                <button id="btnConfig" class="btn-header">
+                    <i class="fas fa-cog"></i> Configurações
+                </button>
+                <button id="btnLogout" class="btn-header">
+                    <i class="fas fa-sign-out-alt"></i> Sair
+                </button>
+            `;
+
+            // Adicionar event listeners
+            document.getElementById('btnFeriados').addEventListener('click', abrirModalFeriados);
+            document.getElementById('btnConfig').onclick = () => window.location.href = 'configuracoes.html';
+            document.getElementById('btnLogout').onclick = () => {
+                auth.signOut().then(() => {
+                    localStorage.removeItem(USUARIO_KEY);
+                    window.location.href = 'index.html';
+                });
+            };
         }
 
         // Configurar tratamento de desconexão
@@ -632,6 +652,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Limpar o timeout quando tudo carregar com sucesso
         clearTimeout(pageLoadTimeout);
         removeLoadingClass();
+
     } catch (error) {
         console.error('Erro durante inicialização:', error);
         handleConnectionError(error);
