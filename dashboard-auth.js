@@ -364,8 +364,9 @@ const adicionarPeriodoFerias = async (event) => {
     
     try {
         const form = event.target;
-        const editIndex = form.dataset.editIndex;
-        const isEditing = editIndex !== undefined;
+        // Converter editIndex para número
+        const editIndex = parseInt(form.dataset.editIndex);
+        const isEditing = !isNaN(editIndex); // Verifica se é um número válido
 
         const dataInicioInput = document.getElementById('dataInicio');
         const dataFimInput = document.getElementById('dataFim');
@@ -387,8 +388,8 @@ const adicionarPeriodoFerias = async (event) => {
         const totalFerias = usuarioLogado.totalFerias || 30;
         let feriasUtilizadas = usuarioLogado.feriasUtilizadas || 0;
 
-        if (isEditing) {
-            // Se estiver editando, primeiro devolver os dias ao saldo
+        if (isEditing && usuarioLogado.historicoFerias[editIndex]) {
+            // Verificar se o período existe antes de acessar
             const periodoAntigo = usuarioLogado.historicoFerias[editIndex];
             feriasUtilizadas -= periodoAntigo.diasFerias;
         }
@@ -398,7 +399,7 @@ const adicionarPeriodoFerias = async (event) => {
             throw new Error(`Saldo de férias insuficiente. Saldo atual: ${totalFerias - feriasUtilizadas} dias`);
         }
 
-        if (isEditing) {
+        if (isEditing && usuarioLogado.historicoFerias[editIndex]) {
             usuarioLogado.historicoFerias[editIndex] = {
                 dataInicio,
                 dataFim,
@@ -604,6 +605,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (dataInicioInput && dataFimInput && diasFeriasInput) {
             dataInicioInput.addEventListener('change', calcularDiasFerias);
             dataFimInput.addEventListener('change', calcularDiasFerias);
+            diasFeriasInput.className = 'no-spinners';
+            diasFeriasInput.setAttribute('readonly', 'true'); // Tornar o campo somente leitura
         }
 
         // Event listener para o formulário
@@ -788,3 +791,30 @@ const registrarUsuario = async (event) => {
 
     console.groupEnd();
 };
+
+// Atualizar a estrutura do formulário onde ele é criado
+const form = `
+    <div class="adicionar-ferias-container">
+        <h2>Adicionar Período de Férias</h2>
+        <form id="adicionarFeriasForm">
+            <div class="data-ferias-container">
+                <div class="form-group">
+                    <label for="dataInicio">Data de Início</label>
+                    <input type="date" id="dataInicio" name="dataInicio" required>
+                </div>
+                <div class="form-group">
+                    <label for="dataFim">Data de Fim</label>
+                    <input type="date" id="dataFim" name="dataFim" required>
+                </div>
+                <div class="form-group">
+                    <label for="diasFerias">Dias de Férias</label>
+                    <input type="number" id="diasFerias" name="diasFerias" class="no-spinners" readonly>
+                </div>
+                <button type="submit">
+                    <i class="fas fa-plus"></i>
+                    Adicionar Período
+                </button>
+            </div>
+        </form>
+    </div>
+`;
