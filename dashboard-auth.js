@@ -1,7 +1,3 @@
-// Chave para armazenamento de dados do usuário
-let USUARIO_KEY = 'usuarioLogado';
-let USUARIOS_KEY = 'usuarios';
-
 // Importações do Firebase
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
 import { 
@@ -19,8 +15,12 @@ import {
     onValue
 } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js';
 
+// Chaves para armazenamento
+const USUARIO_KEY = 'usuarioLogado';
+const USUARIOS_KEY = 'usuarios';
+
 // Configuração do Firebase
-let firebaseConfig = {
+const firebaseConfig = {
     apiKey: "AIzaSyAnPLwZO5i_Ky0nBfI14gzNsRqvVMIOqdk",
     authDomain: "controle-func.firebaseapp.com",
     databaseURL: "https://controle-func-default-rtdb.firebaseio.com",
@@ -31,462 +31,121 @@ let firebaseConfig = {
 };
 
 // Inicializar Firebase
-let app = initializeApp(firebaseConfig);
-let auth = getAuth(app);
-let database = getDatabase(app);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const database = getDatabase(app);
 
-document.addEventListener('DOMContentLoaded', async () => {
-    console.log('Dashboard: Evento DOMContentLoaded disparado');
+// Funções auxiliares
+const removeLoadingClass = () => {
+    document.body.classList.remove('loading');
+    document.querySelector('.loading-overlay').style.display = 'none';
+};
 
-    // Adicionar classe para evitar FOUC (Flash of Unstyled Content)
-    document.body.classList.add('loading');
+const formatarData = (dataString) => {
+    const data = new Date(dataString);
+    return data.toLocaleDateString('pt-BR');
+};
 
-    // Função para remover classe de carregamento
-    function removeLoadingClass() {
-        document.body.classList.remove('loading');
-        document.querySelector('.loading-overlay').style.display = 'none';
+const handleConnectionError = (error) => {
+    console.error(' Erro de conexão com o Firebase:', error);
+    
+    if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+        reconnectAttempts++;
+        console.log(`Tentativa de reconexão ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS}`);
+        
+        setTimeout(() => {
+            console.log('Tentando reconectar...');
+            // Tentar reconectar
+            const connectedRef = ref(database, '.info/connected');
+            onValue(connectedRef, (snap) => {
+                if (snap.val() === true) {
+                    console.log(' Reconectado com sucesso!');
+                    reconnectAttempts = 0;
+                }
+            });
+        }, Math.pow(2, reconnectAttempts) * 1000); // Exponential backoff
+    } else {
+        console.error(' Número máximo de tentativas de reconexão atingido');
+        alert('Erro de conexão. Por favor, verifique sua internet e recarregue a página.');
     }
+};
 
-    // Definir um timeout para liberar a página
-    const pageLoadTimeout = setTimeout(() => {
-        console.warn('Timeout de carregamento atingido');
-        removeLoadingClass();
-    }, 10000); // 10 segundos
+const setupDisconnectHandling = () => {
+    const connectedRef = ref(database, '.info/connected');
+    onValue(connectedRef, (snap) => {
+        if (snap.val() === true) {
+            console.log(' Conectado ao Firebase');
+            
+            // Configurar ações de desconexão
+            const userStatusRef = ref(database, 'status/' + auth.currentUser.uid);
+            onDisconnect(userStatusRef).set('offline');
+            
+            // Atualizar status para online
+            set(userStatusRef, 'online');
+        } else {
+            console.log(' Desconectado do Firebase');
+        }
+    });
+};
 
+const buscarDadosUsuario = async () => {
     try {
-        // Elementos do formulário
-        let adicionarFeriasForm = document.getElementById('adicionarFeriasForm');
-        let dataInicioInput = document.getElementById('dataInicio');
-        let dataFimInput = document.getElementById('dataFim');
-        let diasFeriasInput = document.getElementById('diasFerias');
-        let historicoCorpo = document.getElementById('historicoCorpo');
-        let saldoFeriasElement = document.getElementById('saldoFerias');
-
-        // Elementos do dashboard
-        const nomeUsuarioElement = document.getElementById('employee-name');
-        const usernameElement = document.getElementById('employee-username');
-        const emailElement = document.getElementById('employee-email');
-
-        // Verificar autenticação
         const user = auth.currentUser;
-        if (!user) {
-            window.location.href = 'index.html';
-            return;
-        }
+        if (!user) return null;
 
-        // Carregar dados do usuário
-        let usuarioFirebase = await buscarDadosUsuario() || {};
-        let usuarioLocalStorage = JSON.parse(localStorage.getItem(USUARIO_KEY)) || {};
-
-        // Mesclar dados do usuário
-        let usuarioLogado = {
-            ...usuarioLocalStorage,
-            ...usuarioFirebase,
-            uid: user.uid,
-            email: user.email,
-            nome: usuarioFirebase.nome || usuarioLocalStorage.nome || 'Usuário',
-            username: usuarioFirebase.username || usuarioLocalStorage.username || user.email.split('@')[0]
-        };
-
-        console.log('Usuário logado:', usuarioLogado);
-
-        // Atualizar elementos do dashboard
-        if (nomeUsuarioElement) {
-            nomeUsuarioElement.textContent = usuarioLogado.nome || 'Nome não disponível';
-            console.log('Nome do usuário atualizado:', nomeUsuarioElement.textContent);
-        }
-
-        if (usernameElement) {
-            usernameElement.textContent = usuarioLogado.username || 'Username não disponível';
-            console.log('Username atualizado:', usernameElement.textContent);
-        }
-
-        if (emailElement) {
-            emailElement.textContent = usuarioLogado.email || 'Email não disponível';
-            console.log('Email atualizado:', emailElement.textContent);
-        }
-
-        // Variáveis para controle de férias
-        let totalFerias = usuarioLogado.totalFerias || 30;
-        let feriasUtilizadas = usuarioLogado.feriasUtilizadas || 0;
-        let historicoFerias = usuarioLogado.historicoFerias || [];
-
-        // Atualizar saldo de férias
-        if (saldoFeriasElement) {
-            saldoFeriasElement.textContent = `${totalFerias - feriasUtilizadas} dias`;
-        }
-
-        // Atualizar tabela de histórico
-        atualizarTabelaHistorico();
-
-        // Limpar timeout de carregamento
-        clearTimeout(pageLoadTimeout);
-        removeLoadingClass();
-
-    } catch (error) {
-        console.error('Erro no carregamento do dashboard:', error);
-        clearTimeout(pageLoadTimeout);
-        removeLoadingClass();
-    }
-});
-
-// Função para calcular dias de férias
-function calcularDiasFerias() {
-    if (!dataInicioInput.value || !dataFimInput.value) return;
-
-    let dataInicio = new Date(dataInicioInput.value);
-    let dataFim = new Date(dataFimInput.value);
-
-    // Verificar se a data de início é anterior à data de término
-    if (dataInicio > dataFim) {
-        alert('A data de início deve ser anterior à data de término');
-        dataInicioInput.value = '';
-        dataFimInput.value = '';
-        diasFeriasInput.value = '';
-        return;
-    }
-
-    // Calcular dias de férias (considerando dias úteis)
-    let diffTime = Math.abs(dataFim - dataInicio);
-    let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-
-    diasFeriasInput.value = diffDays;
-}
-
-// Adicionar event listeners para calcular dias de férias
-if (dataInicioInput && dataFimInput && diasFeriasInput) {
-    dataInicioInput.addEventListener('change', calcularDiasFerias);
-    dataFimInput.addEventListener('change', calcularDiasFerias);
-}
-
-// Adicionar tipo de módulo para permitir await no escopo global
-export {};
-
-// Função para carregar feriados
-async function carregarFeriados() {
-    try {
-        let resposta = await fetch('feriados_2025.json');
-        let dadosFeriados = await resposta.json();
-        return dadosFeriados.feriados;
-    } catch (erro) {
-        console.error('Erro ao carregar feriados:', erro);
-        handleConnectionError(erro);
-        return [];
-    }
-}
-
-// Carregar feriados ao iniciar
-(async () => {
-    let feriados = await carregarFeriados();
-    console.log('Feriados carregados:', feriados);
-})();
-
-// Função para buscar dados do usuário no Firebase
-async function buscarDadosUsuario() {
-    try {
-        let user = auth.currentUser;
-        if (!user) {
-            console.error('Usuário não autenticado');
-            return null;
-        }
-
-        let userRef = ref(database, 'users/' + user.uid);
-        let snapshot = await get(userRef);
+        const userRef = ref(database, 'users/' + user.uid);
+        const snapshot = await get(userRef);
 
         if (snapshot.exists()) {
-            let userData = snapshot.val();
-            console.log('Dados do usuário carregados do Firebase:', userData);
-            
-            // Garantir que dados básicos existam
-            return {
-                nome: userData.nome || 'Usuário',
-                username: userData.username || user.email.split('@')[0],
-                email: user.email,
-                uid: user.uid,
-                totalFerias: userData.totalFerias || 30,
-                feriasUtilizadas: userData.feriasUtilizadas || 0,
-                historicoFerias: userData.historicoFerias || []
-            };
+            return snapshot.val();
         } else {
-            console.warn('Dados do usuário não encontrados no Firebase, criando perfil padrão');
-            
-            // Criar perfil padrão se não existir
-            const perfilPadrao = {
-                nome: 'Usuário',
-                username: user.email.split('@')[0],
-                email: user.email,
-                uid: user.uid,
-                totalFerias: 30,
-                feriasUtilizadas: 0,
-                historicoFerias: []
-            };
-
-            // Salvar perfil padrão no Firebase
-            await set(userRef, perfilPadrao);
-
-            return perfilPadrao;
+            console.log('Nenhum dado encontrado para o usuário');
+            return null;
         }
     } catch (error) {
         console.error('Erro ao buscar dados do usuário:', error);
         handleConnectionError(error);
         return null;
     }
-}
+};
 
-// Função para formatar data no padrão DD/MM/YYYY
-function formatarData(dataString) {
-    if (!dataString) return 'Data inválida';
-    const [ano, mes, dia] = dataString.split('-');
-    return `${dia}/${mes}/${ano}`;
-}
+const calcularDiasFerias = () => {
+    if (!dataInicioInput || !dataFimInput || !diasFeriasInput) return;
 
-// Observador de autenticação
-onAuthStateChanged(auth, async (user) => {
-    if (!user) {
-        window.location.href = 'index.html';
+    const dataInicio = new Date(dataInicioInput.value);
+    const dataFim = new Date(dataFimInput.value);
+
+    if (isNaN(dataInicio.getTime()) || isNaN(dataFim.getTime())) {
+        diasFeriasInput.value = '';
         return;
     }
 
-    console.log('Usuário autenticado:', user);
+    // Calcular a diferença em dias
+    const diffTime = Math.abs(dataFim - dataInicio);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 para incluir o último dia
 
+    diasFeriasInput.value = diffDays;
+};
+
+const carregarFeriados = async () => {
     try {
-        // Carregar feriados
-        const feriados = await carregarFeriados();
-        console.log('Feriados carregados:', feriados);
-
-        // Carregar dados do usuário
-        let usuarioFirebase = await buscarDadosUsuario() || {};
-        let usuarioLocalStorage = JSON.parse(localStorage.getItem(USUARIO_KEY)) || {};
-
-        // Lógica de merge de dados
-        let usuarioLogado = {
-            ...usuarioLocalStorage,
-            ...usuarioFirebase
-        };
-
-        // Atualizar localStorage
-        localStorage.setItem(USUARIO_KEY, JSON.stringify(usuarioLogado));
-
-        // Atualizar elementos da interface
-        document.getElementById('employee-name').textContent = usuarioLogado.nome || 'Usuário';
-        document.getElementById('employee-username').textContent = usuarioLogado.username || '';
-        document.getElementById('employee-email').textContent = usuarioLogado.email || '';
-
-        // Atualizar saldo de férias
-        atualizarSaldoFerias();
-        atualizarTabelaHistorico();
-
+        const feriadosRef = ref(database, 'feriados');
+        const snapshot = await get(feriadosRef);
+        return snapshot.exists() ? snapshot.val() : {};
     } catch (error) {
-        console.error('Erro durante o carregamento:', error);
+        console.error('Erro ao carregar feriados:', error);
         handleConnectionError(error);
+        return {};
     }
-});
+};
 
-// Função para adicionar período de férias
-function adicionarPeriodoFerias(event) {
-    event.preventDefault();
-    
-    console.group('🏖️ Adicionar Período de Férias');
-    console.log('Evento recebido:', event);
-
-    // Verificar se os elementos existem
-    if (!dataInicioInput || !dataFimInput || !diasFeriasInput) {
-        console.error('🚨 Elementos de input não encontrados', {
-            dataInicioInput,
-            dataFimInput,
-            diasFeriasInput
-        });
-        alert('Erro: Elementos do formulário não encontrados.');
-        console.groupEnd();
-        return;
-    }
-    
-    const dataInicio = dataInicioInput.value;
-    const dataFim = dataFimInput.value;
-    const diasFerias = parseInt(diasFeriasInput.value);
-
-    console.log('📅 Dados de entrada:', { 
-        dataInicio, 
-        dataFim, 
-        diasFerias 
-    });
-
-    // Validações
-    if (!dataInicio || !dataFim || isNaN(diasFerias)) {
-        console.error('🚫 Dados inválidos');
-        alert('Por favor, preencha todos os campos corretamente.');
-        console.groupEnd();
-        return;
-    }
-
-    console.log('Estado atual:', { 
-        totalFerias, 
-        feriasUtilizadas, 
-        historicoFerias 
-    });
-
-    // Criar período formatado
-    const periodo = `${formatarData(dataInicio)} a ${formatarData(dataFim)}`;
-
-    // Verificar se já existem 3 períodos
-    if (historicoFerias.length >= 3) {
-        console.warn('Limite de períodos atingido');
-        alert('Limite de 3 períodos de férias atingido.');
-        console.groupEnd();
-        return;
-    }
-
-    // Verificar se há saldo suficiente de férias
-    if (diasFerias > (totalFerias - feriasUtilizadas)) {
-        console.warn('Saldo de férias insuficiente');
-        alert('Saldo de férias insuficiente.');
-        console.groupEnd();
-        return;
-    }
-
-    // Verificar feriados no período
-    const feriadosNoPeriodo = feriados.filter(feriado => {
-        const dataFeriado = new Date(feriado.data.split('/').reverse().join('-'));
-        const dataInicioObj = new Date(dataInicio);
-        const dataFimObj = new Date(dataFim);
-        return dataFeriado >= dataInicioObj && dataFeriado <= dataFimObj;
-    });
-
-    if (feriadosNoPeriodo.length > 0) {
-        const nomesFeriados = feriadosNoPeriodo.map(f => f.nome).join(', ');
-        const confirmacao = confirm(`Existem feriados no período selecionado: ${nomesFeriados}. Deseja continuar?`);
-        
-        if (!confirmacao) {
-            console.warn('Adição de férias cancelada pelo usuário');
-            console.groupEnd();
-            return;
-        }
-    }
-
-    // Adicionar período de férias
-    const novoPeriodo = { 
-        periodo: `${formatarData(dataInicio)} a ${formatarData(dataFim)}`, 
-        dataInicio, 
-        dataFim, 
-        diasFerias 
-    };
-    historicoFerias.push(novoPeriodo);
-    feriasUtilizadas += diasFerias;
-
-    console.log('Novo período adicionado:', novoPeriodo);
-    console.log('Histórico de férias atualizado:', historicoFerias);
-    console.log('Férias utilizadas:', feriasUtilizadas);
-
-    // Preparar dados para salvar
-    const dadosAtualizados = {
-        totalFerias,
-        feriasUtilizadas,
-        historicoFerias
-    };
-
-    // Salvar no Firebase
-    const userId = auth.currentUser.uid;
-    const userRef = ref(database, 'users/' + userId);
-
-    try {
-        await salvarPeriodoFerias(dadosAtualizados);
-    } catch (error) {
-        console.error('Erro ao salvar férias:', error);
-        alert('Não foi possível salvar as férias. Tente novamente.');
-        console.groupEnd();
-        return;
-    }
-
-    // Atualizar usuário logado
-    usuarioLogado.feriasUtilizadas = feriasUtilizadas;
-    usuarioLogado.historicoFerias = historicoFerias;
-    localStorage.setItem(USUARIO_KEY, JSON.stringify(usuarioLogado));
-
-    // Atualizar visualização
-    atualizarSaldoFerias();
-    atualizarTabelaHistorico();
-
-    // Limpar formulário
-    dataInicioInput.value = '';
-    dataFimInput.value = '';
-    diasFeriasInput.value = '';
-
-    console.log('Férias salvas com sucesso');
-    console.groupEnd();
-}
-
-// Funções de atualização
-function atualizarSaldoFerias() {
-    if (saldoFeriasElement) {
-        const saldoAtual = totalFerias - feriasUtilizadas;
-        saldoFeriasElement.textContent = `${saldoAtual} dias`;
-        console.log('Saldo de férias atualizado:', saldoAtual);
-    }
-}
-
-function atualizarTabelaHistorico() {
-    if (historicoCorpo) {
-        historicoCorpo.innerHTML = '';
-        console.log('Histórico de férias a ser renderizado:', historicoFerias);
-        
-        historicoFerias.forEach((entry, index) => {
-            console.log('Renderizando entrada:', entry);
-            const linha = document.createElement('tr');
-            
-            // Formatar datas para exibição
-            const dataInicioFormatada = formatarData(entry.dataInicio);
-            const dataFimFormatada = formatarData(entry.dataFim);
-
-            linha.innerHTML = `
-                <td>${entry.periodo}</td>
-                <td>${dataInicioFormatada}</td>
-                <td>${dataFimFormatada}</td>
-                <td>${entry.diasFerias} dias</td>
-                <td>
-                    <button onclick="editarPeriodoFerias(${index})" class="btn-editar">
-                        <i class="fas fa-edit"></i> Editar
-                    </button>
-                    <button onclick="excluirPeriodoFerias(${index})" class="btn-excluir">
-                        <i class="fas fa-trash"></i> Excluir
-                    </button>
-                </td>
-            `;
-            historicoCorpo.appendChild(linha);
-        });
-        console.log('Tabela de histórico de férias atualizada');
-    } else {
-        console.error('Elemento historicoCorpo não encontrado');
-    }
-}
-
-// Adicionar event listener para o formulário
-if (adicionarFeriasForm) {
-    adicionarFeriasForm.removeEventListener('submit', adicionarPeriodoFerias);
-    adicionarFeriasForm.addEventListener('submit', adicionarPeriodoFerias);
-    console.log('Event listener de adicionar férias configurado');
-    console.log('Formulário:', adicionarFeriasForm);
-    console.log('Inputs:', {
-        dataInicio: dataInicioInput,
-        dataFim: dataFimInput,
-        diasFerias: diasFeriasInput
-    });
-} else {
-    console.error('Formulário de férias não encontrado');
-}
-
-// Chamar funções iniciais
-atualizarSaldoFerias();
-atualizarTabelaHistorico();
-
-// Função para salvar período de férias
-async function salvarPeriodoFerias(dadosAtualizados) {
+const salvarPeriodoFerias = async (dadosAtualizados) => {
     try {
         const userId = auth.currentUser.uid;
         const userRef = ref(database, 'users/' + userId);
 
         await update(userRef, dadosAtualizados);
         
-        // Verificar se os dados foram salvos
         const snapshot = await get(userRef);
         if (snapshot.exists()) {
             const dadosSalvos = snapshot.val();
@@ -500,101 +159,215 @@ async function salvarPeriodoFerias(dadosAtualizados) {
         handleConnectionError(error);
         throw error;
     }
-}
+};
 
-// Configuração de reconexão
-const MAX_RECONNECT_ATTEMPTS = 3;
-let reconnectAttempts = 0;
-
-// Função de tratamento de erro de conexão
-function handleConnectionError(error) {
-    console.error('🚨 Erro de conexão com o Firebase:', error);
-    
-    // Incrementar tentativas de reconexão
-    reconnectAttempts++;
-    
-    if (reconnectAttempts <= MAX_RECONNECT_ATTEMPTS) {
-        console.warn(`Tentativa de reconexão ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS}`);
+const atualizarSaldoFerias = () => {
+    if (saldoFeriasElement) {
+        const usuarioLogado = JSON.parse(localStorage.getItem(USUARIO_KEY) || '{}');
+        const totalFerias = usuarioLogado.totalFerias || 30;
+        const feriasUtilizadas = usuarioLogado.feriasUtilizadas || 0;
+        const saldoFerias = totalFerias - feriasUtilizadas;
         
-        // Mostrar mensagem de erro ao usuário
-        const errorOverlay = document.createElement('div');
-        errorOverlay.innerHTML = `
-            <div style="
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                background-color: #ff4d4d;
-                color: white;
-                padding: 10px;
-                text-align: center;
-                z-index: 9999;
-            ">
-                Erro de conexão. Tentando reconectar... (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})
-            </div>
-        `;
-        document.body.appendChild(errorOverlay);
-
-        // Tentar reconectar após um intervalo
-        setTimeout(() => {
-            window.location.reload();
-        }, 3000 * reconnectAttempts);
-    } else {
-        // Mostrar erro permanente
-        const errorOverlay = document.createElement('div');
-        errorOverlay.innerHTML = `
-            <div style="
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background-color: rgba(0,0,0,0.8);
-                color: white;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                align-items: center;
-                z-index: 9999;
-                text-align: center;
-            ">
-                <h1>Erro de Conexão</h1>
-                <p>Não foi possível conectar ao servidor. Por favor, verifique sua conexão de internet.</p>
-                <button onclick="window.location.reload()" style="
-                    padding: 10px 20px;
-                    background-color: #4CAF50;
-                    color: white;
-                    border: none;
-                    border-radius: 5px;
-                    cursor: pointer;
-                ">
-                    Tentar Novamente
-                </button>
-            </div>
-        `;
-        document.body.innerHTML = '';
-        document.body.appendChild(errorOverlay);
+        saldoFeriasElement.textContent = `${saldoFerias} dias`;
     }
-}
+};
 
-// Configurar listener de desconexão
-function setupDisconnectHandling() {
-    const connectedRef = ref(database, '.info/connected');
-    onValue(connectedRef, (snapshot) => {
-        if (snapshot.val() === true) {
-            console.log('✅ Conexão com o Firebase restabelecida');
-            reconnectAttempts = 0;
-            
-            // Remover overlay de erro, se existir
-            const errorOverlay = document.querySelector('div[style*="background-color: #ff4d4d"]');
-            if (errorOverlay) {
-                errorOverlay.remove();
-            }
-        } else {
-            handleConnectionError();
+const atualizarTabelaHistorico = () => {
+    if (historicoCorpo) {
+        const usuarioLogado = JSON.parse(localStorage.getItem(USUARIO_KEY) || '{}');
+        const historicoFerias = usuarioLogado.historicoFerias || [];
+        
+        historicoCorpo.innerHTML = '';
+        
+        historicoFerias.forEach((periodo) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${formatarData(periodo.dataInicio)}</td>
+                <td>${formatarData(periodo.dataFim)}</td>
+                <td>${periodo.diasFerias}</td>
+                <td>${periodo.status || 'Pendente'}</td>
+            `;
+            historicoCorpo.appendChild(tr);
+        });
+    }
+};
+
+const adicionarPeriodoFerias = async (event) => {
+    event.preventDefault();
+    console.group('Adicionar Período de Férias');
+    
+    try {
+        if (!dataInicioInput || !dataFimInput || !diasFeriasInput) {
+            throw new Error('Campos obrigatórios não encontrados');
         }
-    });
-}
 
-// Chamar setup de tratamento de desconexão
-setupDisconnectHandling();
+        const dataInicio = dataInicioInput.value;
+        const dataFim = dataFimInput.value;
+        const diasFerias = parseInt(diasFeriasInput.value);
+
+        if (!dataInicio || !dataFim || isNaN(diasFerias)) {
+            throw new Error('Por favor, preencha todos os campos corretamente');
+        }
+
+        console.log('Dados do formulário:', { dataInicio, dataFim, diasFerias });
+
+        // Buscar dados atuais do usuário
+        const usuarioLogado = JSON.parse(localStorage.getItem(USUARIO_KEY));
+        if (!usuarioLogado) {
+            throw new Error('Usuário não encontrado no localStorage');
+        }
+
+        console.log('Dados do usuário:', usuarioLogado);
+
+        // Verificar saldo de férias
+        const totalFerias = usuarioLogado.totalFerias || 30;
+        const feriasUtilizadas = usuarioLogado.feriasUtilizadas || 0;
+        const saldoFerias = totalFerias - feriasUtilizadas;
+
+        if (diasFerias > saldoFerias) {
+            throw new Error(`Saldo de férias insuficiente. Saldo atual: ${saldoFerias} dias`);
+        }
+
+        // Preparar dados atualizados
+        const historicoFerias = usuarioLogado.historicoFerias || [];
+        historicoFerias.push({
+            dataInicio,
+            dataFim,
+            diasFerias,
+            status: 'Pendente',
+            dataSolicitacao: new Date().toISOString()
+        });
+
+        const dadosAtualizados = {
+            ...usuarioLogado,
+            feriasUtilizadas: feriasUtilizadas + diasFerias,
+            historicoFerias
+        };
+
+        // Salvar no Firebase
+        await salvarPeriodoFerias(dadosAtualizados);
+
+        // Atualizar localStorage
+        localStorage.setItem(USUARIO_KEY, JSON.stringify(dadosAtualizados));
+
+        // Atualizar interface
+        atualizarSaldoFerias();
+        atualizarTabelaHistorico();
+
+        // Limpar formulário
+        event.target.reset();
+
+        alert('Período de férias adicionado com sucesso!');
+    } catch (error) {
+        console.error('Erro ao adicionar período de férias:', error);
+        alert(error.message);
+    }
+
+    console.groupEnd();
+};
+
+// Event Listeners e Inicialização
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('Dashboard: Evento DOMContentLoaded disparado');
+
+    // Adicionar classe para evitar FOUC
+    document.body.classList.add('loading');
+
+    // Timeout para liberar a página
+    const pageLoadTimeout = setTimeout(() => {
+        console.warn('Timeout de carregamento atingido');
+        removeLoadingClass();
+    }, 10000);
+
+    try {
+        // Elementos do formulário
+        const adicionarFeriasForm = document.getElementById('adicionarFeriasForm');
+        const dataInicioInput = document.getElementById('dataInicio');
+        const dataFimInput = document.getElementById('dataFim');
+        const diasFeriasInput = document.getElementById('diasFerias');
+        const historicoCorpo = document.getElementById('historicoCorpo');
+        const saldoFeriasElement = document.getElementById('saldoFerias');
+
+        // Elementos do dashboard
+        const nomeUsuarioElement = document.getElementById('employee-name');
+        const usernameElement = document.getElementById('employee-username');
+        const emailElement = document.getElementById('employee-email');
+
+        // Event listeners para cálculo de dias
+        if (dataInicioInput && dataFimInput && diasFeriasInput) {
+            dataInicioInput.addEventListener('change', calcularDiasFerias);
+            dataFimInput.addEventListener('change', calcularDiasFerias);
+        }
+
+        // Event listener para o formulário
+        if (adicionarFeriasForm) {
+            adicionarFeriasForm.removeEventListener('submit', adicionarPeriodoFerias);
+            adicionarFeriasForm.addEventListener('submit', adicionarPeriodoFerias);
+        }
+
+        // Carregar feriados
+        const feriados = await carregarFeriados();
+        console.log('Feriados carregados:', feriados);
+
+        // Configurar tratamento de desconexão
+        setupDisconnectHandling();
+
+        // Inicializar interface
+        atualizarSaldoFerias();
+        atualizarTabelaHistorico();
+
+    } catch (error) {
+        console.error('Erro durante inicialização:', error);
+        handleConnectionError(error);
+    }
+});
+
+// Observador de autenticação
+onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+        window.location.href = 'index.html';
+        return;
+    }
+
+    try {
+        // Carregar dados do usuário
+        const usuarioFirebase = await buscarDadosUsuario() || {};
+        const usuarioLocalStorage = JSON.parse(localStorage.getItem(USUARIO_KEY)) || {};
+
+        // Mesclar dados
+        const usuarioLogado = {
+            ...usuarioLocalStorage,
+            ...usuarioFirebase,
+            uid: user.uid,
+            email: user.email,
+            nome: usuarioFirebase.nome || usuarioLocalStorage.nome || 'Usuário',
+            username: usuarioFirebase.username || usuarioLocalStorage.username || user.email.split('@')[0]
+        };
+
+        // Atualizar localStorage
+        localStorage.setItem(USUARIO_KEY, JSON.stringify(usuarioLogado));
+
+        // Atualizar elementos do dashboard
+        const nomeUsuarioElement = document.getElementById('employee-name');
+        const usernameElement = document.getElementById('employee-username');
+        const emailElement = document.getElementById('employee-email');
+
+        if (nomeUsuarioElement) {
+            nomeUsuarioElement.textContent = usuarioLogado.nome;
+        }
+        if (usernameElement) {
+            usernameElement.textContent = usuarioLogado.username;
+        }
+        if (emailElement) {
+            emailElement.textContent = usuarioLogado.email;
+        }
+
+        // Atualizar interface
+        atualizarSaldoFerias();
+        atualizarTabelaHistorico();
+
+    } catch (error) {
+        console.error('Erro ao carregar dados do usuário:', error);
+        handleConnectionError(error);
+    }
+});
