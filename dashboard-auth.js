@@ -35,6 +35,18 @@ let database = getDatabase(app);
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('Dashboard: Evento DOMContentLoaded disparado');
 
+    // Adicionar classe para evitar FOUC (Flash of Unstyled Content)
+    document.body.classList.add('loading');
+
+    // Função para remover classe de carregamento
+    function removeLoadingClass() {
+        document.body.classList.remove('loading');
+        window.removeEventListener('load', removeLoadingClass);
+    }
+
+    // Adicionar listener para remoção da classe de carregamento
+    window.addEventListener('load', removeLoadingClass);
+
     // Elementos do formulário
     let adicionarFeriasForm = document.getElementById('adicionarFeriasForm');
     let dataInicioInput = document.getElementById('dataInicio');
