@@ -314,3 +314,4 @@ document.addEventListener('DOMContentLoaded', async () => {
         atualizarSaldoFerias();
         atualizarTabelaHistorico();
     });
+});
