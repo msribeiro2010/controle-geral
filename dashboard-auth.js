@@ -43,7 +43,7 @@ const removeLoadingClass = () => {
 };
 
 const formatarData = (dataString) => {
-    const data = new Date(dataString);
+    const data = new Date(dataString + 'T00:00:00');
     return data.toLocaleDateString('pt-BR');
 };
 
@@ -133,14 +133,16 @@ const mostrarFeriadosDoMes = (feriados) => {
     const feriadosContainer = document.getElementById('feriados-mes');
     if (!feriadosContainer) return;
 
-    const mesAtual = new Date().getMonth() + 1;
-    const anoAtual = new Date().getFullYear();
+    const dataAtual = new Date();
+    const mesAtual = dataAtual.getMonth() + 1;
+    const anoAtual = dataAtual.getFullYear();
     const nomesMeses = [
         'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
         'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
     ];
     
-    feriadosContainer.innerHTML = `<h3>Feriados de ${nomesMeses[mesAtual - 1]}</h3>`;
+    // Atualizar título com o mês atual
+    feriadosContainer.innerHTML = `<h3>Feriados de ${nomesMeses[mesAtual - 1]} de ${anoAtual}</h3>`;
     
     // Filtrar feriados do mês atual
     const feriadosDoMes = feriados.filter(feriado => {
@@ -174,6 +176,15 @@ const mostrarFeriadosDoMes = (feriados) => {
     });
 
     feriadosContainer.appendChild(lista);
+
+    // Configurar atualização automática na virada do mês
+    const agora = new Date();
+    const proximoMes = new Date(agora.getFullYear(), agora.getMonth() + 1, 1);
+    const tempoAteProximoMes = proximoMes - agora;
+
+    setTimeout(() => {
+        mostrarFeriadosDoMes(feriados);
+    }, tempoAteProximoMes);
 };
 
 const carregarFeriados = async () => {
@@ -223,12 +234,27 @@ const carregarFeriados = async () => {
     }
 };
 
-const salvarPeriodoFerias = async (dadosAtualizados) => {
+const salvarPeriodoFerias = async (event) => {
+    event.preventDefault();
+    
     try {
+        const dataInicio = document.getElementById('dataInicio').value;
+        const dataFim = document.getElementById('dataFim').value;
+        
+        // Ajustar as datas para considerar o timezone local
+        const dataInicioAjustada = new Date(dataInicio + 'T00:00:00');
+        const dataFimAjustada = new Date(dataFim + 'T00:00:00');
+        
+        const periodo = {
+            dataInicio: dataInicioAjustada.toISOString().split('T')[0],
+            dataFim: dataFimAjustada.toISOString().split('T')[0],
+            diasFerias: calcularDiasFerias(dataInicio, dataFim)
+        };
+
         const userId = auth.currentUser.uid;
         const userRef = ref(database, 'users/' + userId);
 
-        await update(userRef, dadosAtualizados);
+        await update(userRef, periodo);
         
         const snapshot = await get(userRef);
         if (snapshot.exists()) {
@@ -239,7 +265,8 @@ const salvarPeriodoFerias = async (dadosAtualizados) => {
             throw new Error('Não foi possível recuperar os dados salvos');
         }
     } catch (error) {
-        console.error('Erro ao salvar férias:', error);
+        console.error('Erro ao salvar período:', error);
+        alert('Erro ao salvar período de férias');
         handleConnectionError(error);
         throw error;
     }
@@ -346,16 +373,23 @@ window.excluirPeriodoFerias = async (index) => {
             throw new Error('Período não encontrado');
         }
 
+        // Pegar o período que será removido para atualizar o saldo
         const periodoRemovido = usuarioLogado.historicoFerias[index];
-
+        
         // Atualizar saldo de férias
         usuarioLogado.feriasUtilizadas = (usuarioLogado.feriasUtilizadas || 0) - periodoRemovido.diasFerias;
         
         // Remover período do histórico
         usuarioLogado.historicoFerias.splice(index, 1);
 
-        // Salvar no Firebase
-        await salvarPeriodoFerias(usuarioLogado);
+        // Atualizar no Firebase
+        const userId = auth.currentUser.uid;
+        const userRef = ref(database, 'users/' + userId);
+        
+        await update(userRef, {
+            historicoFerias: usuarioLogado.historicoFerias,
+            feriasUtilizadas: usuarioLogado.feriasUtilizadas
+        });
 
         // Atualizar localStorage
         localStorage.setItem(USUARIO_KEY, JSON.stringify(usuarioLogado));
@@ -379,9 +413,8 @@ const adicionarPeriodoFerias = async (event) => {
     
     try {
         const form = event.target;
-        // Converter editIndex para número
         const editIndex = parseInt(form.dataset.editIndex);
-        const isEditing = !isNaN(editIndex); // Verifica se é um número válido
+        const isEditing = !isNaN(editIndex);
 
         const dataInicioInput = document.getElementById('dataInicio');
         const dataFimInput = document.getElementById('dataFim');
@@ -400,46 +433,50 @@ const adicionarPeriodoFerias = async (event) => {
         }
 
         const usuarioLogado = JSON.parse(localStorage.getItem(USUARIO_KEY));
-        const totalFerias = usuarioLogado.totalFerias || 30;
+        const totalFerias = 30; // Fixado em 30 dias
         let feriasUtilizadas = usuarioLogado.feriasUtilizadas || 0;
 
         if (isEditing && usuarioLogado.historicoFerias[editIndex]) {
-            // Verificar se o período existe antes de acessar
             const periodoAntigo = usuarioLogado.historicoFerias[editIndex];
             feriasUtilizadas -= periodoAntigo.diasFerias;
         }
 
-        // Verificar se há saldo suficiente
+        // Verificar se o novo período ultrapassa o limite de 30 dias
         if (feriasUtilizadas + diasFerias > totalFerias) {
-            throw new Error(`Saldo de férias insuficiente. Saldo atual: ${totalFerias - feriasUtilizadas} dias`);
+            throw new Error(`Não é possível adicionar este período. Limite máximo é de ${totalFerias} dias. Saldo atual: ${totalFerias - feriasUtilizadas} dias`);
         }
 
-        if (isEditing && usuarioLogado.historicoFerias[editIndex]) {
-            usuarioLogado.historicoFerias[editIndex] = {
-                dataInicio,
-                dataFim,
-                diasFerias,
-                status: 'Pendente',
-                dataSolicitacao: new Date().toISOString()
-            };
+        // Atualizar ou adicionar o período
+        const novoPeriodo = {
+            dataInicio,
+            dataFim,
+            diasFerias,
+            status: 'Pendente',
+            dataSolicitacao: new Date().toISOString()
+        };
+
+        if (isEditing) {
+            usuarioLogado.historicoFerias[editIndex] = novoPeriodo;
         } else {
             if (!usuarioLogado.historicoFerias) {
                 usuarioLogado.historicoFerias = [];
             }
-            usuarioLogado.historicoFerias.push({
-                dataInicio,
-                dataFim,
-                diasFerias,
-                status: 'Pendente',
-                dataSolicitacao: new Date().toISOString()
-            });
+            usuarioLogado.historicoFerias.push(novoPeriodo);
         }
 
         // Atualizar total de férias utilizadas
         usuarioLogado.feriasUtilizadas = feriasUtilizadas + diasFerias;
+        usuarioLogado.totalFerias = totalFerias; // Garantir que totalFerias seja sempre 30
 
         // Salvar no Firebase
-        await salvarPeriodoFerias(usuarioLogado);
+        const userId = auth.currentUser.uid;
+        const userRef = ref(database, 'users/' + userId);
+        
+        await update(userRef, {
+            historicoFerias: usuarioLogado.historicoFerias,
+            feriasUtilizadas: usuarioLogado.feriasUtilizadas,
+            totalFerias: usuarioLogado.totalFerias
+        });
 
         // Atualizar localStorage
         localStorage.setItem(USUARIO_KEY, JSON.stringify(usuarioLogado));
