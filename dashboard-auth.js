@@ -46,6 +46,8 @@ const formatarData = (dataString) => {
     return data.toLocaleDateString('pt-BR');
 };
 
+let reconnectAttempts = 0;
+
 const handleConnectionError = (error) => {
     console.error(' Erro de conexão com o Firebase:', error);
     
@@ -110,6 +112,10 @@ const buscarDadosUsuario = async () => {
 };
 
 const calcularDiasFerias = () => {
+    const dataInicioInput = document.getElementById('dataInicio');
+    const dataFimInput = document.getElementById('dataFim');
+    const diasFeriasInput = document.getElementById('diasFerias');
+    
     if (!dataInicioInput || !dataFimInput || !diasFeriasInput) return;
 
     const dataInicio = new Date(dataInicioInput.value);
@@ -197,6 +203,10 @@ const adicionarPeriodoFerias = async (event) => {
     console.group('Adicionar Período de Férias');
     
     try {
+        const dataInicioInput = document.getElementById('dataInicio');
+        const dataFimInput = document.getElementById('dataFim');
+        const diasFeriasInput = document.getElementById('diasFerias');
+        
         if (!dataInicioInput || !dataFimInput || !diasFeriasInput) {
             throw new Error('Campos obrigatórios não encontrados');
         }
@@ -273,20 +283,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Adicionar classe para evitar FOUC
     document.body.classList.add('loading');
 
-    // Timeout para liberar a página
+    // Reduzir o timeout para 5 segundos
     const pageLoadTimeout = setTimeout(() => {
         console.warn('Timeout de carregamento atingido');
         removeLoadingClass();
-    }, 10000);
+    }, 5000); // Reduzido para 5 segundos
 
     try {
-        // Elementos do formulário
-        const adicionarFeriasForm = document.getElementById('adicionarFeriasForm');
-        const dataInicioInput = document.getElementById('dataInicio');
-        const dataFimInput = document.getElementById('dataFim');
-        const diasFeriasInput = document.getElementById('diasFerias');
-        const historicoCorpo = document.getElementById('historicoCorpo');
-        const saldoFeriasElement = document.getElementById('saldoFerias');
+        // Elementos do formulário - declare como variáveis globais
+        window.adicionarFeriasForm = document.getElementById('adicionarFeriasForm');
+        window.dataInicioInput = document.getElementById('dataInicio');
+        window.dataFimInput = document.getElementById('dataFim');
+        window.diasFeriasInput = document.getElementById('diasFerias');
+        window.historicoCorpo = document.getElementById('historicoCorpo');
+        window.saldoFeriasElement = document.getElementById('saldoFerias');
 
         // Elementos do dashboard
         const nomeUsuarioElement = document.getElementById('employee-name');
@@ -316,9 +326,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         atualizarSaldoFerias();
         atualizarTabelaHistorico();
 
+        // Limpar o timeout quando tudo carregar com sucesso
+        clearTimeout(pageLoadTimeout);
+        removeLoadingClass();
     } catch (error) {
         console.error('Erro durante inicialização:', error);
         handleConnectionError(error);
+        removeLoadingClass();
     }
 });
 
