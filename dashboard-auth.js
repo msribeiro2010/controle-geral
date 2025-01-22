@@ -13,7 +13,10 @@ import {
     ref, 
     update, 
     get,
-    set
+    set,
+    onDisconnect,
+    connectDatabaseEmulator,
+    onValue
 } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js';
 
 // Configuração do Firebase
@@ -164,6 +167,7 @@ async function carregarFeriados() {
         return dadosFeriados.feriados;
     } catch (erro) {
         console.error('Erro ao carregar feriados:', erro);
+        handleConnectionError(erro);
         return [];
     }
 }
@@ -219,6 +223,7 @@ async function buscarDadosUsuario() {
         }
     } catch (error) {
         console.error('Erro ao buscar dados do usuário:', error);
+        handleConnectionError(error);
         return null;
     }
 }
@@ -388,39 +393,31 @@ onAuthStateChanged(auth, async (user) => {
         const userId = user.uid;
         const userRef = ref(database, 'users/' + userId);
 
-        update(userRef, dadosAtualizados)
-            .then(async () => {
-                // Verificar se os dados foram salvos
-                const snapshot = await get(userRef);
-                if (snapshot.exists()) {
-                    const dadosSalvos = snapshot.val();
-                    console.log('Dados salvos no Firebase:', dadosSalvos);
+        try {
+            await salvarPeriodoFerias(dadosAtualizados);
+        } catch (error) {
+            console.error('Erro ao salvar férias:', error);
+            alert('Não foi possível salvar as férias. Tente novamente.');
+            console.groupEnd();
+            return;
+        }
 
-                    // Atualizar usuário logado
-                    usuarioLogado.feriasUtilizadas = feriasUtilizadas;
-                    usuarioLogado.historicoFerias = historicoFerias;
-                    localStorage.setItem(USUARIO_KEY, JSON.stringify(usuarioLogado));
+        // Atualizar usuário logado
+        usuarioLogado.feriasUtilizadas = feriasUtilizadas;
+        usuarioLogado.historicoFerias = historicoFerias;
+        localStorage.setItem(USUARIO_KEY, JSON.stringify(usuarioLogado));
 
-                    // Atualizar visualização
-                    atualizarSaldoFerias();
-                    atualizarTabelaHistorico();
+        // Atualizar visualização
+        atualizarSaldoFerias();
+        atualizarTabelaHistorico();
 
-                    // Limpar formulário
-                    dataInicioInput.value = '';
-                    dataFimInput.value = '';
-                    diasFeriasInput.value = '';
+        // Limpar formulário
+        dataInicioInput.value = '';
+        dataFimInput.value = '';
+        diasFeriasInput.value = '';
 
-                    console.log('Férias salvas com sucesso');
-                    console.groupEnd();
-                } else {
-                    throw new Error('Não foi possível recuperar os dados salvos');
-                }
-            })
-            .catch(error => {
-                console.error('Erro ao salvar férias:', error);
-                alert('Não foi possível salvar as férias. Tente novamente.');
-                console.groupEnd();
-            });
+        console.log('Férias salvas com sucesso');
+        console.groupEnd();
     }
 
     // Funções de atualização
@@ -486,3 +483,124 @@ onAuthStateChanged(auth, async (user) => {
     atualizarSaldoFerias();
     atualizarTabelaHistorico();
 });
+
+// Função para salvar período de férias
+async function salvarPeriodoFerias(dadosAtualizados) {
+    try {
+        const userId = auth.currentUser.uid;
+        const userRef = ref(database, 'users/' + userId);
+
+        await update(userRef, dadosAtualizados);
+        
+        // Verificar se os dados foram salvos
+        const snapshot = await get(userRef);
+        if (snapshot.exists()) {
+            const dadosSalvos = snapshot.val();
+            console.log('Dados salvos no Firebase:', dadosSalvos);
+            return dadosSalvos;
+        } else {
+            throw new Error('Não foi possível recuperar os dados salvos');
+        }
+    } catch (error) {
+        console.error('Erro ao salvar férias:', error);
+        handleConnectionError(error);
+        throw error;
+    }
+}
+
+// Configuração de reconexão
+const MAX_RECONNECT_ATTEMPTS = 3;
+let reconnectAttempts = 0;
+
+// Função de tratamento de erro de conexão
+function handleConnectionError(error) {
+    console.error('🚨 Erro de conexão com o Firebase:', error);
+    
+    // Incrementar tentativas de reconexão
+    reconnectAttempts++;
+    
+    if (reconnectAttempts <= MAX_RECONNECT_ATTEMPTS) {
+        console.warn(`Tentativa de reconexão ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS}`);
+        
+        // Mostrar mensagem de erro ao usuário
+        const errorOverlay = document.createElement('div');
+        errorOverlay.innerHTML = `
+            <div style="
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                background-color: #ff4d4d;
+                color: white;
+                padding: 10px;
+                text-align: center;
+                z-index: 9999;
+            ">
+                Erro de conexão. Tentando reconectar... (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})
+            </div>
+        `;
+        document.body.appendChild(errorOverlay);
+
+        // Tentar reconectar após um intervalo
+        setTimeout(() => {
+            window.location.reload();
+        }, 3000 * reconnectAttempts);
+    } else {
+        // Mostrar erro permanente
+        const errorOverlay = document.createElement('div');
+        errorOverlay.innerHTML = `
+            <div style="
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0,0,0,0.8);
+                color: white;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                z-index: 9999;
+                text-align: center;
+            ">
+                <h1>Erro de Conexão</h1>
+                <p>Não foi possível conectar ao servidor. Por favor, verifique sua conexão de internet.</p>
+                <button onclick="window.location.reload()" style="
+                    padding: 10px 20px;
+                    background-color: #4CAF50;
+                    color: white;
+                    border: none;
+                    border-radius: 5px;
+                    cursor: pointer;
+                ">
+                    Tentar Novamente
+                </button>
+            </div>
+        `;
+        document.body.innerHTML = '';
+        document.body.appendChild(errorOverlay);
+    }
+}
+
+// Configurar listener de desconexão
+function setupDisconnectHandling() {
+    const connectedRef = ref(database, '.info/connected');
+    onValue(connectedRef, (snapshot) => {
+        if (snapshot.val() === true) {
+            console.log('✅ Conexão com o Firebase restabelecida');
+            reconnectAttempts = 0;
+            
+            // Remover overlay de erro, se existir
+            const errorOverlay = document.querySelector('div[style*="background-color: #ff4d4d"]');
+            if (errorOverlay) {
+                errorOverlay.remove();
+            }
+        } else {
+            handleConnectionError();
+        }
+    });
+}
+
+// Chamar setup de tratamento de desconexão
+setupDisconnectHandling();
