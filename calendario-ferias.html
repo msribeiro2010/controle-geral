@@ -41,6 +41,8 @@
             background-color: #ffdddd;
             font-weight: bold;
         }
+
+
         .btn-voltar {
             display: block;
             width: 200px;
@@ -158,6 +160,7 @@
                             const periodoAtual = {
                                 inicio: new Date(ferias.dataInicio),
                                 fim: new Date(ferias.dataFim),
+
                                 nome: userData.nome
                             };
 
@@ -167,6 +170,7 @@
                                 (periodoAtual.inicio <= periodo.inicio && periodoAtual.fim >= periodo.fim)
                             );
 
+
                             linha.innerHTML = `
                                 <td class="${conflito ? 'conflito' : ''}">${userData.nome}</td>
                                 <td class="${conflito ? 'conflito' : ''}">
@@ -174,6 +178,7 @@
                                     ${new Date(ferias.dataFim).toLocaleDateString()}
                                 </td>
                                 <td class="${conflito ? 'conflito' : ''}">${ferias.diasFerias}</td>
+
                             `;
 
                             tabelaBody.appendChild(linha);
