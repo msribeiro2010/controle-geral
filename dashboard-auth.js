@@ -290,7 +290,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // Adicionar período de férias
             const novoPeriodo = { 
-                periodo, 
+                periodo: `${formatarData(dataInicio)} a ${formatarData(dataFim)}`, 
                 dataInicio, 
                 dataFim, 
                 diasFerias 
@@ -299,6 +299,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             feriasUtilizadas += diasFerias;
 
             console.log('Novo período adicionado:', novoPeriodo);
+            console.log('Histórico de férias atualizado:', historicoFerias);
             console.log('Férias utilizadas:', feriasUtilizadas);
 
             // Preparar dados para salvar
@@ -359,10 +360,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         function atualizarTabelaHistorico() {
             if (historicoCorpo) {
                 historicoCorpo.innerHTML = '';
+                console.log('Histórico de férias a ser renderizado:', historicoFerias);
+                
                 historicoFerias.forEach((entry, index) => {
+                    console.log('Renderizando entrada:', entry);
                     const linha = document.createElement('tr');
                     linha.innerHTML = `
-                        <td>${entry.periodo}</td>
+                        <td>${entry.dataInicio}</td>
+                        <td>${entry.dataFim}</td>
                         <td>${entry.diasFerias} dias</td>
                         <td>
                             <button onclick="editarPeriodoFerias(${index})" class="btn-editar">
@@ -376,6 +381,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     historicoCorpo.appendChild(linha);
                 });
                 console.log('Tabela de histórico de férias atualizada');
+            } else {
+                console.error('Elemento historicoCorpo não encontrado');
             }
         }
 
