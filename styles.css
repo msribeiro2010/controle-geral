@@ -67,128 +67,210 @@ header h1 {
 /* Seções */
 .employee-info-container {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 20px;
-    margin-bottom: 30px;
+    margin-bottom: 0;
 }
 
 .employee-info, .ferias-restantes {
-    background-color: white;
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease;
 }
 
+.employee-info:hover, .ferias-restantes:hover {
+    transform: translateY(-2px);
+}
+
+.employee-info h2, .ferias-restantes h2 {
+    color: #2d3748;
+    font-size: 1.4rem;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #edf2f7;
+}
+
+.employee-info p {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    color: #4a5568;
+}
+
+.employee-info p span:last-child {
+    color: #2d3748;
+    font-weight: 500;
+}
+
+/* Estilo para o saldo de férias */
 #saldoFerias {
-    font-size: 2.5rem;
+    font-size: 3rem;
     font-weight: 700;
-    color: var(--secondary-color);
+    color: #3182ce;
     text-align: center;
     padding: 20px 0;
+    display: block;
 }
 
-/* Formulário de Férias */
-.adicionar-ferias-container {
-    background-color: white;
-    border: 1px solid #e9ecef;
+/* Seção de feriados do mês */
+.feriados-container {
+    background: white;
+    border-radius: 12px;
+    padding: 0;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.feriados-container h3 {
+    background: linear-gradient(135deg, #3182ce, #2b6cb0);
+    color: white;
+    margin: 0;
+    padding: 20px;
+    font-size: 1.3rem;
+    font-weight: 500;
+}
+
+.feriados-lista {
+    padding: 20px;
+}
+
+.feriados-lista li {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    border-bottom: 1px solid #edf2f7;
+    transition: all 0.2s ease;
+}
+
+.feriados-lista li:last-child {
+    border-bottom: none;
+}
+
+.feriados-lista li:hover {
+    background: #f7fafc;
     border-radius: 8px;
+}
+
+.feriados-lista .data {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #3182ce;
+    min-width: 35px;
+    text-align: center;
+    margin-right: 15px;
+}
+
+.feriados-lista .descricao {
+    flex: 1;
+    color: #2d3748;
+    font-weight: 500;
+}
+
+/* Formulário de férias */
+.adicionar-ferias-container {
+    background: white;
+    border-radius: 12px;
     padding: 25px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.adicionar-ferias-container h2 {
+    color: #2d3748;
+    font-size: 1.4rem;
+    margin-bottom: 25px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #edf2f7;
 }
 
 .data-ferias-container {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 20px;
-    margin-bottom: 20px;
+    margin-bottom: 25px;
 }
 
-.data-inicio, .data-fim, .dias-ferias {
-    display: flex;
-    flex-direction: column;
-}
-
-.data-ferias-container h3, .dias-ferias h3 {
-    margin-bottom: 10px;
-    color: var(--text-muted);
-    font-size: 0.9rem;
+.data-ferias-container label {
+    display: block;
+    color: #4a5568;
+    margin-bottom: 8px;
     font-weight: 500;
 }
 
-input[type="date"], input[type="number"] {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-    font-size: 0.9rem;
-}
-
-.adicionar-ferias-container button {
+.data-ferias-container input {
     width: 100%;
     padding: 12px;
-    background-color: var(--primary-color);
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+.data-ferias-container input:focus {
+    border-color: #3182ce;
+    box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+    outline: none;
+}
+
+.adicionar-ferias-container button[type="submit"] {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #3182ce, #2b6cb0);
     color: white;
     border: none;
-    border-radius: 4px;
-    font-weight: 600;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: all 0.2s ease;
 }
 
-.adicionar-ferias-container button:hover {
-    background-color: #2980b9;
+.adicionar-ferias-container button[type="submit"]:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(49, 130, 206, 0.2);
 }
 
-/* Tabela de Histórico */
+/* Tabela de histórico */
+.historico-ferias-container {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    overflow-x: auto;
+}
+
+.historico-ferias-container h2 {
+    color: #2d3748;
+    font-size: 1.4rem;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #edf2f7;
+}
+
 #historicoTable {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-    margin-top: 20px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 #historicoTable th {
-    background-color: #f8f9fa;
-    color: var(--text-muted);
+    background: #f7fafc;
+    color: #4a5568;
     font-weight: 600;
     padding: 15px;
     text-align: left;
-    border-bottom: 1px solid #e9ecef;
+    border-bottom: 2px solid #edf2f7;
 }
 
 #historicoTable td {
     padding: 15px;
-    border-bottom: 1px solid #e9ecef;
+    border-bottom: 1px solid #edf2f7;
+    color: #2d3748;
 }
 
-.editar-periodo, .excluir-periodo {
-    padding: 5px 10px;
-    margin: 0 5px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: background-color 0.3s ease;
-}
-
-.editar-periodo {
-    background-color: #28a745;
-    color: white;
-}
-
-.excluir-periodo {
-    background-color: #dc3545;
-    color: white;
-}
-
-.editar-periodo:hover {
-    background-color: #218838;
-}
-
-.excluir-periodo:hover {
-    background-color: #c82333;
+#historicoTable tr:hover td {
+    background: #f7fafc;
 }
 
 /* Login Container */
@@ -282,16 +364,25 @@ input[type="date"], input[type="number"] {
 
 /* Seção de Feriados */
 .feriados-container {
-    background-color: #f8f9fa;
-    padding: 20px;
-    border-radius: 6px;
-    margin-top: 20px;
+    background: #fff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin: 15px 0;
 }
 
-.feriados-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 15px;
+.feriados-lista {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.feriados-lista li {
+    display: flex;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+    gap: 10px;
 }
 
 .feriado-item {
@@ -417,46 +508,21 @@ input[type="date"], input[type="number"] {
 
 /* Botão de Feriados */
 .btn-feriados {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    text-decoration: none;
-    padding: 10px 20px;
-    border-radius: 6px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    transition: all 0.3s ease;
-    background-color: #007bff;
+    background-color: #2196F3;
     color: white;
-    border: 2px solid transparent;
-    box-shadow: 0 4px 6px rgba(0, 123, 255, 0.2);
-    font-size: 0.9rem;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .btn-feriados:hover {
-    background-color: #0056b3;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 8px rgba(0, 123, 255, 0.3);
-}
-
-.btn-feriados:active {
-    transform: translateY(1px);
-    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
-}
-
-.btn-feriados::before {
-    content: '📅';
-    margin-right: 8px;
-    font-size: 1.1rem;
-}
-
-/* Responsividade para botão de feriados */
-@media screen and (max-width: 600px) {
-    .btn-feriados {
-        padding: 8px 15px;
-        font-size: 0.8rem;
-    }
+    background-color: #1976D2;
 }
 
 /* Botão de Calendário */
@@ -554,6 +620,11 @@ footer {
     #historicoTable td {
         padding: 10px;
     }
+
+    .feriados-container h3 {
+        font-size: 1.2rem;
+        padding: 15px;
+    }
 }
 
 /* Animações e Transições */
@@ -595,4 +666,332 @@ footer {
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+/* Modal de Feriados */
+.modal-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    backdrop-filter: blur(5px);
+}
+
+.modal-container.visible {
+    opacity: 1;
+}
+
+.modal-feriados {
+    background-color: white;
+    border-radius: 16px;
+    width: 95%;
+    max-width: 1200px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+    transform: translateY(20px);
+    transition: transform 0.3s ease;
+}
+
+.modal-container.visible .modal-feriados {
+    transform: translateY(0);
+}
+
+.modal-header {
+    padding: 25px 30px;
+    border-bottom: 1px solid #edf2f7;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 1;
+}
+
+.modal-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.modal-title i {
+    font-size: 24px;
+    color: #3182ce;
+}
+
+.modal-title h2 {
+    margin: 0;
+    color: #2d3748;
+    font-size: 1.8rem;
+    font-weight: 600;
+}
+
+.fechar-modal {
+    background: none;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    color: #718096;
+    font-size: 1.5rem;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+}
+
+.fechar-modal:hover {
+    background-color: #f7fafc;
+    color: #2d3748;
+}
+
+.modal-body {
+    padding: 30px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 25px;
+}
+
+.mes-feriados {
+    background-color: #f8fafc;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease;
+}
+
+.mes-feriados:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.mes-header {
+    background: linear-gradient(135deg, #3182ce, #2b6cb0);
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.mes-numero {
+    font-size: 1.8rem;
+    font-weight: 700;
+    opacity: 0.8;
+}
+
+.mes-header h3 {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 500;
+}
+
+.mes-feriados ul {
+    list-style: none;
+    padding: 15px;
+    margin: 0;
+}
+
+.mes-feriados li {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    border-bottom: 1px solid #e2e8f0;
+    transition: background-color 0.2s ease;
+}
+
+.mes-feriados li:last-child {
+    border-bottom: none;
+}
+
+.mes-feriados li:hover {
+    background-color: #fff;
+    border-radius: 8px;
+}
+
+.feriado-data {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #3182ce;
+    min-width: 35px;
+    text-align: center;
+}
+
+.feriado-info {
+    margin-left: 15px;
+    flex: 1;
+}
+
+.feriado-descricao {
+    color: #2d3748;
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+
+.feriado-dia-semana {
+    color: #718096;
+    font-size: 0.9rem;
+}
+
+/* Responsividade */
+@media screen and (max-width: 768px) {
+    .modal-feriados {
+        width: 95%;
+        max-height: 85vh;
+        margin: 20px;
+    }
+
+    .modal-header {
+        padding: 20px;
+    }
+
+    .modal-title h2 {
+        font-size: 1.4rem;
+    }
+
+    .modal-body {
+        padding: 15px;
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .mes-header {
+        padding: 12px 15px;
+    }
+
+    .mes-numero {
+        font-size: 1.5rem;
+    }
+
+    .mes-header h3 {
+        font-size: 1.2rem;
+    }
+}
+
+/* Scrollbar personalizada */
+.modal-feriados::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal-feriados::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+
+.modal-feriados::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 4px;
+}
+
+.modal-feriados::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0;
+}
+
+/* Estilos para os tipos de feriados */
+.tipo {
+    font-size: 0.8em;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+.tipo.nacional { background: #e3f2fd; color: #1565c0; }
+.tipo.facultativo { background: #f5f5f5; color: #616161; }
+.tipo.estadual { background: #e8f5e9; color: #2e7d32; }
+.tipo.municipal { background: #fff3e0; color: #ef6c00; }
+.tipo.recesso { background: #fce4ec; color: #c2185b; }
+
+/* Header */
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.header-buttons {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+/* Estilos para os botões de ação na tabela */
+.acoes {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.btn-editar,
+.btn-excluir {
+    padding: 6px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-editar {
+    background-color: #2196F3;
+    color: white;
+}
+
+.btn-excluir {
+    background-color: #f44336;
+    color: white;
+}
+
+.btn-editar:hover {
+    background-color: #1976D2;
+}
+
+.btn-excluir:hover {
+    background-color: #d32f2f;
+}
+
+.btn-editar:disabled,
+.btn-excluir:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Tooltip para botões desabilitados */
+[disabled] {
+    position: relative;
+}
+
+[disabled]:hover::after {
+    content: 'Não é possível modificar períodos aprovados';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1;
+}
+
+/* Estilo geral do dashboard */
+.dashboard-container {
+    display: grid;
+    gap: 25px;
+    padding: 20px;
 }

@@ -97,9 +97,14 @@
         <header>
             <div class="header-content">
                 <h1>Painel de Férias</h1>
-                <button id="btnLogout" class="btn-logout">
-                    <i class="fas fa-sign-out-alt"></i> Sair
-                </button>
+                <div class="header-buttons">
+                    <button id="btnFeriados" class="btn-feriados">
+                        <i class="fas fa-calendar"></i> Feriados 2025
+                    </button>
+                    <button id="btnLogout" class="btn-logout">
+                        <i class="fas fa-sign-out-alt"></i> Sair
+                    </button>
+                </div>
             </div>
         </header>
 
@@ -161,11 +166,17 @@
             </table>
         </div>
 
-        <div class="feriados-container">
-            <h2>Feriados do Mês</h2>
-            <div id="feriados-mes-container" class="feriados-grid">
-                <!-- Feriados serão adicionados dinamicamente aqui -->
+        <div class="dashboard-container">
+            <!-- O botão será inserido aqui via JavaScript -->
+            
+            <!-- Container para feriados do mês -->
+            <div class="dashboard-section">
+                <div id="feriados-mes" class="feriados-container">
+                    <!-- Os feriados do mês serão inseridos aqui -->
+                </div>
             </div>
+            
+            <!-- Resto do conteúdo do dashboard -->
         </div>
 
         <footer>
