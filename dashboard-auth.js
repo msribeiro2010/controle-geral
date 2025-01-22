@@ -1,6 +1,6 @@
 // Chave para armazenamento de dados do usuário
-const USUARIO_KEY = 'usuarioLogado';
-const USUARIOS_KEY = 'usuarios';
+let USUARIO_KEY = 'usuarioLogado';
+let USUARIOS_KEY = 'usuarios';
 
 // Importações do Firebase
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
@@ -16,7 +16,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js';
 
 // Configuração do Firebase
-const firebaseConfig = {
+let firebaseConfig = {
     apiKey: "AIzaSyAnPLwZO5i_Ky0nBfI14gzNsRqvVMIOqdk",
     authDomain: "controle-func.firebaseapp.com",
     databaseURL: "https://controle-func-default-rtdb.firebaseio.com",
@@ -27,27 +27,27 @@ const firebaseConfig = {
 };
 
 // Inicializar Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const database = getDatabase(app);
+let app = initializeApp(firebaseConfig);
+let auth = getAuth(app);
+let database = getDatabase(app);
 
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('Dashboard: Evento DOMContentLoaded disparado');
 
     // Elementos do formulário
-    const adicionarFeriasForm = document.getElementById('adicionarFeriasForm');
-    const dataInicioInput = document.getElementById('dataInicio');
-    const dataFimInput = document.getElementById('dataFim');
-    const diasFeriasInput = document.getElementById('diasFerias');
-    const historicoCorpo = document.getElementById('historicoCorpo');
-    const saldoFeriasElement = document.getElementById('saldoFerias');
+    let adicionarFeriasForm = document.getElementById('adicionarFeriasForm');
+    let dataInicioInput = document.getElementById('dataInicio');
+    let dataFimInput = document.getElementById('dataFim');
+    let diasFeriasInput = document.getElementById('diasFerias');
+    let historicoCorpo = document.getElementById('historicoCorpo');
+    let saldoFeriasElement = document.getElementById('saldoFerias');
 
     // Função para calcular dias de férias
     function calcularDiasFerias() {
         if (!dataInicioInput.value || !dataFimInput.value) return;
 
-        const dataInicio = new Date(dataInicioInput.value);
-        const dataFim = new Date(dataFimInput.value);
+        let dataInicio = new Date(dataInicioInput.value);
+        let dataFim = new Date(dataFimInput.value);
 
         // Verificar se a data de início é anterior à data de término
         if (dataInicio > dataFim) {
@@ -59,8 +59,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         // Calcular dias de férias (considerando dias úteis)
-        const diffTime = Math.abs(dataFim - dataInicio);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        let diffTime = Math.abs(dataFim - dataInicio);
+        let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
         diasFeriasInput.value = diffDays;
     }
@@ -74,8 +74,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Função para carregar feriados
     async function carregarFeriados() {
         try {
-            const resposta = await fetch('feriados_2025.json');
-            const dadosFeriados = await resposta.json();
+            let resposta = await fetch('feriados_2025.json');
+            let dadosFeriados = await resposta.json();
             return dadosFeriados.feriados;
         } catch (erro) {
             console.error('Erro ao carregar feriados:', erro);
@@ -84,23 +84,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Carregar feriados ao iniciar
-    const feriados = await carregarFeriados();
+    let feriados = await carregarFeriados();
     console.log('Feriados carregados:', feriados);
 
     // Função para buscar dados do usuário no Firebase
     async function buscarDadosUsuario() {
         try {
-            const user = auth.currentUser;
+            let user = auth.currentUser;
             if (!user) {
                 console.error('Usuário não autenticado');
                 return null;
             }
 
-            const userRef = ref(database, 'users/' + user.uid);
-            const snapshot = await get(userRef);
+            let userRef = ref(database, 'users/' + user.uid);
+            let snapshot = await get(userRef);
 
             if (snapshot.exists()) {
-                const userData = snapshot.val();
+                let userData = snapshot.val();
                 console.log('Dados do usuário carregados do Firebase:', userData);
                 return userData;
             } else {
@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Função para formatar data no padrão brasileiro
     function formatarData(dataString) {
         if (!dataString) return '';
-        const data = new Date(dataString);
+        let data = new Date(dataString);
         return data.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
     }
 
@@ -128,11 +128,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         // Buscar dados do usuário
-        const usuarioFirebase = await buscarDadosUsuario() || {};
-        const usuarioLocalStorage = JSON.parse(localStorage.getItem(USUARIO_KEY)) || {};
+        let usuarioFirebase = await buscarDadosUsuario() || {};
+        let usuarioLocalStorage = JSON.parse(localStorage.getItem(USUARIO_KEY)) || {};
 
         // Mesclar dados do Firebase com localStorage
-        const usuarioLogado = {
+        let usuarioLogado = {
             ...usuarioLocalStorage,
             ...usuarioFirebase,
             uid: user.uid,
@@ -143,9 +143,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         localStorage.setItem(USUARIO_KEY, JSON.stringify(usuarioLogado));
 
         // Variáveis para controle de férias
-        const totalFerias = usuarioLogado.totalFerias || 30;
-        const feriasUtilizadas = usuarioLogado.feriasUtilizadas || 0;
-        const historicoFerias = usuarioLogado.historicoFerias || [];
+        let totalFerias = usuarioLogado.totalFerias || 30;
+        let feriasUtilizadas = usuarioLogado.feriasUtilizadas || 0;
+        let historicoFerias = usuarioLogado.historicoFerias || [];
 
         // Função para adicionar período de férias
         async function adicionarPeriodoFerias(event) {
@@ -166,9 +166,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
             
-            const dataInicio = dataInicioInput.value;
-            const dataFim = dataFimInput.value;
-            const diasFerias = parseInt(diasFeriasInput.value);
+            let dataInicio = dataInicioInput.value;
+            let dataFim = dataFimInput.value;
+            let diasFerias = parseInt(diasFeriasInput.value);
 
             console.log('📅 Dados de entrada:', { 
                 dataInicio, 
@@ -191,7 +191,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
 
             // Criar período formatado
-            const periodo = `${formatarData(dataInicio)} a ${formatarData(dataFim)}`;
+            let periodo = `${formatarData(dataInicio)} a ${formatarData(dataFim)}`;
 
             // Verificar se já existem 3 períodos
             if (historicoFerias.length >= 3) {
@@ -210,16 +210,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             // Verificar feriados no período
-            const feriadosNoPeriodo = feriados.filter(feriado => {
-                const dataFeriado = new Date(feriado.data.split('/').reverse().join('-'));
-                const dataInicioObj = new Date(dataInicio);
-                const dataFimObj = new Date(dataFim);
+            let feriadosNoPeriodo = feriados.filter(feriado => {
+                let dataFeriado = new Date(feriado.data.split('/').reverse().join('-'));
+                let dataInicioObj = new Date(dataInicio);
+                let dataFimObj = new Date(dataFim);
                 return dataFeriado >= dataInicioObj && dataFeriado <= dataFimObj;
             });
 
             if (feriadosNoPeriodo.length > 0) {
-                const nomesFeriados = feriadosNoPeriodo.map(f => f.nome).join(', ');
-                const confirmacao = confirm(`Existem feriados no período selecionado: ${nomesFeriados}. Deseja continuar?`);
+                let nomesFeriados = feriadosNoPeriodo.map(f => f.nome).join(', ');
+                let confirmacao = confirm(`Existem feriados no período selecionado: ${nomesFeriados}. Deseja continuar?`);
                 
                 if (!confirmacao) {
                     console.warn('Adição de férias cancelada pelo usuário');
@@ -229,7 +229,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             // Adicionar período de férias
-            const novoPeriodo = { 
+            let novoPeriodo = { 
                 periodo, 
                 dataInicio, 
                 dataFim, 
@@ -242,7 +242,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log('Férias utilizadas:', feriasUtilizadas);
 
             // Preparar dados para salvar
-            const dadosAtualizados = {
+            let dadosAtualizados = {
                 totalFerias,
                 feriasUtilizadas,
                 historicoFerias
@@ -250,16 +250,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             try {
                 // Salvar no Firebase
-                const userId = user.uid;
-                const userRef = ref(database, 'users/' + userId);
+                let userId = user.uid;
+                let userRef = ref(database, 'users/' + userId);
 
                 // Primeiro, tentar atualizar
                 await update(userRef, dadosAtualizados);
 
                 // Verificar se os dados foram salvos
-                const snapshot = await get(userRef);
+                let snapshot = await get(userRef);
                 if (snapshot.exists()) {
-                    const dadosSalvos = snapshot.val();
+                    let dadosSalvos = snapshot.val();
                     console.log('Dados salvos no Firebase:', dadosSalvos);
 
                     // Atualizar usuário logado
@@ -293,7 +293,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Funções de atualização
         function atualizarSaldoFerias() {
             if (saldoFeriasElement) {
-                const saldoAtual = totalFerias - feriasUtilizadas;
+                let saldoAtual = totalFerias - feriasUtilizadas;
                 saldoFeriasElement.textContent = `${saldoAtual} dias`;
                 console.log('Saldo de férias atualizado:', saldoAtual);
             }
@@ -303,7 +303,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (historicoCorpo) {
                 historicoCorpo.innerHTML = '';
                 historicoFerias.forEach((entry, index) => {
-                    const linha = document.createElement('tr');
+                    let linha = document.createElement('tr');
                     linha.innerHTML = `
                         <td>${entry.periodo}</td>
                         <td>${entry.diasFerias} dias</td>
