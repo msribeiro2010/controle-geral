@@ -317,29 +317,63 @@ header h1 {
 }
 
 .form-group {
-    margin-bottom: 15px;
+    margin-bottom: 20px;
 }
 
 .form-group label {
     display: block;
-    margin-bottom: 8px;
-    color: var(--text-muted);
+    margin-bottom: 5px;
+    color: #2d3748;
     font-weight: 500;
 }
 
 .form-group input {
     width: 100%;
     padding: 12px;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-    font-size: 0.9rem;
-    transition: border-color 0.3s ease;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.2s ease;
 }
 
 .form-group input:focus {
+    border-color: #3182ce;
+    box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
     outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.form-group input:invalid {
+    border-color: #e53e3e;
+}
+
+.form-text {
+    display: block;
+    margin-top: 5px;
+    font-size: 0.875rem;
+    color: #718096;
+}
+
+/* Estilo para mensagem de erro */
+.error-message {
+    color: #e53e3e;
+    font-size: 0.875rem;
+    margin-top: 5px;
+}
+
+/* Estilo para validação do email */
+input[type="email"]:valid {
+    border-color: #48bb78;
+}
+
+input[type="email"]:invalid:not(:placeholder-shown) {
+    border-color: #e53e3e;
+}
+
+.form-group small {
+    color: #718096;
+    font-size: 0.875rem;
+    margin-top: 5px;
+    display: block;
 }
 
 .login-box button[type="submit"] {
@@ -994,4 +1028,20 @@ footer {
     display: grid;
     gap: 25px;
     padding: 20px;
+}
+
+.domain-info {
+    font-size: 0.85em;
+    color: #718096;
+    font-weight: normal;
+    margin-left: 5px;
+}
+
+/* Ajuste para responsividade */
+@media screen and (max-width: 480px) {
+    .domain-info {
+        display: block;
+        margin-left: 0;
+        margin-top: 2px;
+    }
 }

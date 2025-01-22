@@ -2,7 +2,8 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
 import { 
     getAuth, 
-    onAuthStateChanged 
+    onAuthStateChanged,
+    createUserWithEmailAndPassword
 } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
 import { 
     getDatabase, 
@@ -184,49 +185,35 @@ const mostrarFeriadosDoMes = (feriados) => {
 
 const carregarFeriados = async () => {
     try {
-        // Array de feriados fixo (temporário)
+        // Array de feriados fixo com datas corretas para 2025
         const feriadosArray = [
-            {"id":1,"data":"2025-03-03","descricao":"Carnaval","tipo":"FACULTATIVO","recorrente":true},
-            {"id":2,"data":"2025-03-04","descricao":"Carnaval","tipo":"FACULTATIVO","recorrente":true},
-            {"id":3,"data":"2025-03-05","descricao":"Quarta-feira de Cinzas","tipo":"FACULTATIVO","recorrente":true},
-            {"id":4,"data":"2025-04-16","descricao":"Semana Santa","tipo":"FACULTATIVO","recorrente":true},
-            {"id":5,"data":"2025-04-17","descricao":"Semana Santa","tipo":"FACULTATIVO","recorrente":true},
-            {"id":6,"data":"2025-04-18","descricao":"Sexta-feira Santa","tipo":"NACIONAL","recorrente":true},
-            {"id":7,"data":"2025-04-21","descricao":"Tiradentes","tipo":"NACIONAL","recorrente":true},
-            {"id":8,"data":"2025-05-01","descricao":"Dia do Trabalho","tipo":"NACIONAL","recorrente":true},
-            {"id":9,"data":"2025-05-02","descricao":"Emenda de Feriado","tipo":"FACULTATIVO","recorrente":true},
-            {"id":10,"data":"2025-06-19","descricao":"Corpus Christi","tipo":"FACULTATIVO","recorrente":true},
-            {"id":11,"data":"2025-06-20","descricao":"Emenda de Feriado","tipo":"FACULTATIVO","recorrente":true},
-            {"id":12,"data":"2025-07-09","descricao":"Revolução Constitucionalista","tipo":"ESTADUAL","recorrente":true},
-            {"id":13,"data":"2025-08-11","descricao":"Dia do Estudante","tipo":"FACULTATIVO","recorrente":true},
-            {"id":14,"data":"2025-10-27","descricao":"Dia do Servidor Público","tipo":"FACULTATIVO","recorrente":true},
-            {"id":15,"data":"2025-11-20","descricao":"Dia da Consciência Negra","tipo":"MUNICIPAL","recorrente":true},
-            {"id":16,"data":"2025-11-21","descricao":"Emenda de Feriado","tipo":"FACULTATIVO","recorrente":true},
-            {"id":17,"data":"2025-12-08","descricao":"Dia de Nossa Senhora da Conceição","tipo":"MUNICIPAL","recorrente":true},
-            {"id":18,"data":"2025-12-20","descricao":"Recesso de Final de Ano","tipo":"RECESSO","recorrente":true},
-            {"id":19,"data":"2025-12-21","descricao":"Recesso de Final de Ano","tipo":"RECESSO","recorrente":true},
-            {"id":20,"data":"2025-12-22","descricao":"Recesso de Final de Ano","tipo":"RECESSO","recorrente":true},
-            {"id":21,"data":"2025-12-23","descricao":"Recesso de Final de Ano","tipo":"RECESSO","recorrente":true},
-            {"id":22,"data":"2025-12-24","descricao":"Recesso de Final de Ano","tipo":"RECESSO","recorrente":true},
-            {"id":23,"data":"2025-12-25","descricao":"Recesso de Final de Ano","tipo":"RECESSO","recorrente":true},
-            {"id":24,"data":"2025-12-26","descricao":"Recesso de Final de Ano","tipo":"RECESSO","recorrente":true},
-            {"id":25,"data":"2025-12-27","descricao":"Recesso de Final de Ano","tipo":"RECESSO","recorrente":true},
-            {"id":26,"data":"2025-12-28","descricao":"Recesso de Final de Ano","tipo":"RECESSO","recorrente":true},
-            {"id":27,"data":"2025-12-29","descricao":"Recesso de Final de Ano","tipo":"RECESSO","recorrente":true},
-            {"id":28,"data":"2025-12-30","descricao":"Recesso de Final de Ano","tipo":"RECESSO","recorrente":true},
-            {"id":29,"data":"2025-12-31","descricao":"Recesso de Final de Ano","tipo":"RECESSO","recorrente":true},
-            {"id":30,"data":"2026-01-01","descricao":"Recesso de Final de Ano","tipo":"RECESSO","recorrente":true},
-            {"id":31,"data":"2026-01-02","descricao":"Recesso de Final de Ano","tipo":"RECESSO","recorrente":true},
-            {"id":32,"data":"2026-01-03","descricao":"Recesso de Final de Ano","tipo":"RECESSO","recorrente":true},
-            {"id":33,"data":"2026-01-04","descricao":"Recesso de Final de Ano","tipo":"RECESSO","recorrente":true},
-            {"id":34,"data":"2026-01-05","descricao":"Recesso de Final de Ano","tipo":"RECESSO","recorrente":true},
-            {"id":35,"data":"2026-01-06","descricao":"Recesso de Final de Ano","tipo":"RECESSO","recorrente":true},
-            {"id":36,"data":"2025-01-01","descricao":"Recesso de Janeiro 2025","tipo":"RECESSO","recorrente":false},
-            {"id":37,"data":"2025-01-02","descricao":"Recesso de Janeiro 2025","tipo":"RECESSO","recorrente":false},
-            {"id":38,"data":"2025-01-03","descricao":"Recesso de Janeiro 2025","tipo":"RECESSO","recorrente":false},
-            {"id":39,"data":"2025-01-04","descricao":"Recesso de Janeiro 2025","tipo":"RECESSO","recorrente":false},
-            {"id":40,"data":"2025-01-05","descricao":"Recesso de Janeiro 2025","tipo":"RECESSO","recorrente":false},
-            {"id":41,"data":"2025-01-06","descricao":"Recesso de Janeiro 2025","tipo":"RECESSO","recorrente":false}
+            {"id":36,"data":"2025-01-01","descricao":"Confraternização Universal","tipo":"NACIONAL"},
+            {"id":37,"data":"2025-01-02","descricao":"Recesso de Janeiro","tipo":"RECESSO"},
+            {"id":38,"data":"2025-01-03","descricao":"Recesso de Janeiro","tipo":"RECESSO"},
+            {"id":39,"data":"2025-01-06","descricao":"Recesso de Janeiro","tipo":"RECESSO"},
+            {"id":1,"data":"2025-03-03","descricao":"Carnaval","tipo":"FACULTATIVO"},
+            {"id":2,"data":"2025-03-04","descricao":"Carnaval","tipo":"FACULTATIVO"},
+            {"id":3,"data":"2025-03-05","descricao":"Quarta-feira de Cinzas","tipo":"FACULTATIVO"},
+            {"id":4,"data":"2025-04-17","descricao":"Semana Santa","tipo":"FACULTATIVO"},
+            {"id":5,"data":"2025-04-18","descricao":"Sexta-feira Santa","tipo":"NACIONAL"},
+            {"id":6,"data":"2025-04-20","descricao":"Páscoa","tipo":"NACIONAL"},
+            {"id":7,"data":"2025-04-21","descricao":"Tiradentes","tipo":"NACIONAL"},
+            {"id":8,"data":"2025-05-01","descricao":"Dia do Trabalho","tipo":"NACIONAL"},
+            {"id":9,"data":"2025-05-02","descricao":"Emenda de Feriado","tipo":"FACULTATIVO"},
+            {"id":10,"data":"2025-06-19","descricao":"Corpus Christi","tipo":"FACULTATIVO"},
+            {"id":11,"data":"2025-06-20","descricao":"Emenda de Feriado","tipo":"FACULTATIVO"},
+            {"id":12,"data":"2025-07-09","descricao":"Revolução Constitucionalista","tipo":"ESTADUAL"},
+            {"id":13,"data":"2025-09-07","descricao":"Independência do Brasil","tipo":"NACIONAL"},
+            {"id":14,"data":"2025-10-12","descricao":"Nossa Senhora Aparecida","tipo":"NACIONAL"},
+            {"id":15,"data":"2025-11-02","descricao":"Finados","tipo":"NACIONAL"},
+            {"id":16,"data":"2025-11-15","descricao":"Proclamação da República","tipo":"NACIONAL"},
+            {"id":17,"data":"2025-11-20","descricao":"Dia da Consciência Negra","tipo":"MUNICIPAL"},
+            {"id":18,"data":"2025-12-24","descricao":"Véspera de Natal","tipo":"FACULTATIVO"},
+            {"id":19,"data":"2025-12-25","descricao":"Natal","tipo":"NACIONAL"},
+            {"id":20,"data":"2025-12-26","descricao":"Recesso de Final de Ano","tipo":"RECESSO"},
+            {"id":21,"data":"2025-12-29","descricao":"Recesso de Final de Ano","tipo":"RECESSO"},
+            {"id":22,"data":"2025-12-30","descricao":"Recesso de Final de Ano","tipo":"RECESSO"},
+            {"id":23,"data":"2025-12-31","descricao":"Recesso de Final de Ano","tipo":"RECESSO"}
         ];
 
         // Primeiro, tente carregar do Firebase
@@ -566,13 +553,23 @@ const abrirModalFeriados = async () => {
     }
 };
 
-// Adicione esta função auxiliar para obter o dia da semana
+// Função auxiliar para obter o dia da semana corretamente
 const getDiaSemana = (dataString) => {
-    const data = new Date(dataString);
+    // Criar a data no fuso horário local
+    const [ano, mes, dia] = dataString.split('-').map(Number);
+    const data = new Date(ano, mes - 1, dia); // mes - 1 porque em JS os meses começam do 0
+    
     const diasSemana = [
         'Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira',
         'Quinta-feira', 'Sexta-feira', 'Sábado'
     ];
+
+    // Verificar se é uma data válida antes de retornar
+    if (isNaN(data.getTime())) {
+        console.error('Data inválida:', dataString);
+        return 'Data inválida';
+    }
+
     return diasSemana[data.getDay()];
 };
 
@@ -691,3 +688,82 @@ onAuthStateChanged(auth, async (user) => {
         handleConnectionError(error);
     }
 });
+
+// Função para validar o domínio do email
+const validarDominioEmail = (email) => {
+    const dominioPermitido = 'trt15.jus.br';
+    const dominio = email.split('@')[1];
+    return dominio === dominioPermitido;
+};
+
+// Modificar a função de registro para incluir a validação
+const registrarUsuario = async (event) => {
+    event.preventDefault();
+    console.group('Registrar Usuário');
+
+    try {
+        const email = document.getElementById('email').value;
+        const senha = document.getElementById('senha').value;
+        const nome = document.getElementById('nome').value;
+        const username = document.getElementById('username').value;
+
+        // Validar domínio do email
+        if (!validarDominioEmail(email)) {
+            throw new Error('Apenas emails do domínio trt15.jus.br são permitidos');
+        }
+
+        // Validar campos obrigatórios
+        if (!email || !senha || !nome || !username) {
+            throw new Error('Todos os campos são obrigatórios');
+        }
+
+        // Criar usuário no Firebase Auth
+        const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
+        const user = userCredential.user;
+
+        // Dados do usuário para salvar no Realtime Database
+        const userData = {
+            nome,
+            username,
+            email,
+            totalFerias: 30,
+            feriasUtilizadas: 0,
+            historicoFerias: [],
+            dataCriacao: new Date().toISOString()
+        };
+
+        // Salvar dados adicionais no Realtime Database
+        await set(ref(database, 'users/' + user.uid), userData);
+
+        // Salvar no localStorage
+        localStorage.setItem(USUARIO_KEY, JSON.stringify({
+            ...userData,
+            uid: user.uid
+        }));
+
+        console.log('Usuário registrado com sucesso');
+        window.location.href = 'dashboard.html';
+
+    } catch (error) {
+        console.error('Erro ao registrar usuário:', error);
+        let mensagemErro = 'Erro ao registrar usuário';
+
+        switch (error.code) {
+            case 'auth/email-already-in-use':
+                mensagemErro = 'Este email já está em uso';
+                break;
+            case 'auth/invalid-email':
+                mensagemErro = 'Email inválido';
+                break;
+            case 'auth/weak-password':
+                mensagemErro = 'A senha deve ter pelo menos 6 caracteres';
+                break;
+            default:
+                mensagemErro = error.message;
+        }
+
+        alert(mensagemErro);
+    }
+
+    console.groupEnd();
+};
