@@ -139,13 +139,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             email: user.email
         };
 
-        // Variáveis para controle de férias
-        let totalFerias = usuarioLogado.totalFerias || 30;
-        let feriasUtilizadas = usuarioLogado.feriasUtilizadas || 0;
-        let historicoFerias = usuarioLogado.historicoFerias || [];
-
         // Atualizar localStorage
         localStorage.setItem(USUARIO_KEY, JSON.stringify(usuarioLogado));
+
+        // Variáveis para controle de férias
+        const totalFerias = usuarioLogado.totalFerias || 30;
+        const feriasUtilizadas = usuarioLogado.feriasUtilizadas || 0;
+        const historicoFerias = usuarioLogado.historicoFerias || [];
 
         // Função para adicionar período de férias
         async function adicionarPeriodoFerias(event) {
