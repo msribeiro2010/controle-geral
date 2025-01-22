@@ -12,7 +12,8 @@ import {
     getDatabase, 
     ref, 
     update, 
-    get 
+    get,
+    set
 } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js';
 
 // Configuração do Firebase
@@ -41,6 +42,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     let diasFeriasInput = document.getElementById('diasFerias');
     let historicoCorpo = document.getElementById('historicoCorpo');
     let saldoFeriasElement = document.getElementById('saldoFerias');
+
+    // Elementos do dashboard
+    const nomeUsuarioElement = document.getElementById('nomeUsuario');
+    const usernameElement = document.getElementById('username');
+    const emailElement = document.getElementById('email');
 
     // Função para calcular dias de férias
     function calcularDiasFerias() {
@@ -102,10 +108,35 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (snapshot.exists()) {
                 let userData = snapshot.val();
                 console.log('Dados do usuário carregados do Firebase:', userData);
-                return userData;
+                
+                // Garantir que dados básicos existam
+                return {
+                    nome: userData.nome || 'Usuário',
+                    username: userData.username || user.email.split('@')[0],
+                    email: user.email,
+                    uid: user.uid,
+                    totalFerias: userData.totalFerias || 30,
+                    feriasUtilizadas: userData.feriasUtilizadas || 0,
+                    historicoFerias: userData.historicoFerias || []
+                };
             } else {
-                console.error('Dados do usuário não encontrados no Firebase');
-                return null;
+                console.warn('Dados do usuário não encontrados no Firebase, criando perfil padrão');
+                
+                // Criar perfil padrão se não existir
+                const perfilPadrao = {
+                    nome: 'Usuário',
+                    username: user.email.split('@')[0],
+                    email: user.email,
+                    uid: user.uid,
+                    totalFerias: 30,
+                    feriasUtilizadas: 0,
+                    historicoFerias: []
+                };
+
+                // Salvar perfil padrão no Firebase
+                await set(userRef, perfilPadrao);
+
+                return perfilPadrao;
             }
         } catch (error) {
             console.error('Erro ao buscar dados do usuário:', error);
@@ -127,6 +158,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
+        console.log('Usuário autenticado:', user);
+
         // Buscar dados do usuário
         let usuarioFirebase = await buscarDadosUsuario() || {};
         let usuarioLocalStorage = JSON.parse(localStorage.getItem(USUARIO_KEY)) || {};
@@ -136,8 +169,23 @@ document.addEventListener('DOMContentLoaded', async () => {
             ...usuarioLocalStorage,
             ...usuarioFirebase,
             uid: user.uid,
-            email: user.email
+            email: user.email,
+            nome: usuarioFirebase.nome || usuarioLocalStorage.nome || 'Usuário',
+            username: usuarioFirebase.username || usuarioLocalStorage.username || user.email.split('@')[0]
         };
+
+        console.log('Usuário logado:', usuarioLogado);
+
+        // Atualizar elementos do dashboard
+        if (nomeUsuarioElement) {
+            nomeUsuarioElement.textContent = usuarioLogado.nome || 'Nome não disponível';
+        }
+        if (usernameElement) {
+            usernameElement.textContent = usuarioLogado.username || 'Username não disponível';
+        }
+        if (emailElement) {
+            emailElement.textContent = usuarioLogado.email || 'Email não disponível';
+        }
 
         // Atualizar localStorage
         localStorage.setItem(USUARIO_KEY, JSON.stringify(usuarioLogado));
@@ -148,7 +196,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         let historicoFerias = usuarioLogado.historicoFerias || [];
 
         // Função para adicionar período de férias
-        async function adicionarPeriodoFerias(event) {
+        function adicionarPeriodoFerias(event) {
             event.preventDefault();
             
             console.group('🏖️ Adicionar Período de Férias');
@@ -166,9 +214,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
             
-            let dataInicio = dataInicioInput.value;
-            let dataFim = dataFimInput.value;
-            let diasFerias = parseInt(diasFeriasInput.value);
+            const dataInicio = dataInicioInput.value;
+            const dataFim = dataFimInput.value;
+            const diasFerias = parseInt(diasFeriasInput.value);
 
             console.log('📅 Dados de entrada:', { 
                 dataInicio, 
@@ -191,7 +239,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
 
             // Criar período formatado
-            let periodo = `${formatarData(dataInicio)} a ${formatarData(dataFim)}`;
+            const periodo = `${formatarData(dataInicio)} a ${formatarData(dataFim)}`;
 
             // Verificar se já existem 3 períodos
             if (historicoFerias.length >= 3) {
@@ -210,16 +258,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             // Verificar feriados no período
-            let feriadosNoPeriodo = feriados.filter(feriado => {
-                let dataFeriado = new Date(feriado.data.split('/').reverse().join('-'));
-                let dataInicioObj = new Date(dataInicio);
-                let dataFimObj = new Date(dataFim);
+            const feriadosNoPeriodo = feriados.filter(feriado => {
+                const dataFeriado = new Date(feriado.data.split('/').reverse().join('-'));
+                const dataInicioObj = new Date(dataInicio);
+                const dataFimObj = new Date(dataFim);
                 return dataFeriado >= dataInicioObj && dataFeriado <= dataFimObj;
             });
 
             if (feriadosNoPeriodo.length > 0) {
-                let nomesFeriados = feriadosNoPeriodo.map(f => f.nome).join(', ');
-                let confirmacao = confirm(`Existem feriados no período selecionado: ${nomesFeriados}. Deseja continuar?`);
+                const nomesFeriados = feriadosNoPeriodo.map(f => f.nome).join(', ');
+                const confirmacao = confirm(`Existem feriados no período selecionado: ${nomesFeriados}. Deseja continuar?`);
                 
                 if (!confirmacao) {
                     console.warn('Adição de férias cancelada pelo usuário');
@@ -229,7 +277,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             // Adicionar período de férias
-            let novoPeriodo = { 
+            const novoPeriodo = { 
                 periodo, 
                 dataInicio, 
                 dataFim, 
@@ -242,58 +290,55 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log('Férias utilizadas:', feriasUtilizadas);
 
             // Preparar dados para salvar
-            let dadosAtualizados = {
+            const dadosAtualizados = {
                 totalFerias,
                 feriasUtilizadas,
                 historicoFerias
             };
 
-            try {
-                // Salvar no Firebase
-                let userId = user.uid;
-                let userRef = ref(database, 'users/' + userId);
+            // Salvar no Firebase
+            const userId = user.uid;
+            const userRef = ref(database, 'users/' + userId);
 
-                // Primeiro, tentar atualizar
-                await update(userRef, dadosAtualizados);
+            update(userRef, dadosAtualizados)
+                .then(async () => {
+                    // Verificar se os dados foram salvos
+                    const snapshot = await get(userRef);
+                    if (snapshot.exists()) {
+                        const dadosSalvos = snapshot.val();
+                        console.log('Dados salvos no Firebase:', dadosSalvos);
 
-                // Verificar se os dados foram salvos
-                let snapshot = await get(userRef);
-                if (snapshot.exists()) {
-                    let dadosSalvos = snapshot.val();
-                    console.log('Dados salvos no Firebase:', dadosSalvos);
+                        // Atualizar usuário logado
+                        usuarioLogado.feriasUtilizadas = feriasUtilizadas;
+                        usuarioLogado.historicoFerias = historicoFerias;
+                        localStorage.setItem(USUARIO_KEY, JSON.stringify(usuarioLogado));
 
-                    // Atualizar usuário logado
-                    usuarioLogado.feriasUtilizadas = feriasUtilizadas;
-                    usuarioLogado.historicoFerias = historicoFerias;
-                    localStorage.setItem(USUARIO_KEY, JSON.stringify(usuarioLogado));
+                        // Atualizar visualização
+                        atualizarSaldoFerias();
+                        atualizarTabelaHistorico();
 
-                    // Atualizar visualização
-                    atualizarSaldoFerias();
-                    atualizarTabelaHistorico();
+                        // Limpar formulário
+                        dataInicioInput.value = '';
+                        dataFimInput.value = '';
+                        diasFeriasInput.value = '';
 
-                    // Limpar formulário
-                    dataInicioInput.value = '';
-                    dataFimInput.value = '';
-                    diasFeriasInput.value = '';
-
-                    console.log('Férias salvas com sucesso');
+                        console.log('Férias salvas com sucesso');
+                        console.groupEnd();
+                    } else {
+                        throw new Error('Não foi possível recuperar os dados salvos');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao salvar férias:', error);
+                    alert('Não foi possível salvar as férias. Tente novamente.');
                     console.groupEnd();
-
-                } else {
-                    throw new Error('Não foi possível recuperar os dados salvos');
-                }
-
-            } catch (error) {
-                console.error('Erro ao salvar férias:', error);
-                alert('Não foi possível salvar as férias. Tente novamente.');
-                console.groupEnd();
-            }
+                });
         }
 
         // Funções de atualização
         function atualizarSaldoFerias() {
             if (saldoFeriasElement) {
-                let saldoAtual = totalFerias - feriasUtilizadas;
+                const saldoAtual = totalFerias - feriasUtilizadas;
                 saldoFeriasElement.textContent = `${saldoAtual} dias`;
                 console.log('Saldo de férias atualizado:', saldoAtual);
             }
@@ -303,7 +348,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (historicoCorpo) {
                 historicoCorpo.innerHTML = '';
                 historicoFerias.forEach((entry, index) => {
-                    let linha = document.createElement('tr');
+                    const linha = document.createElement('tr');
                     linha.innerHTML = `
                         <td>${entry.periodo}</td>
                         <td>${entry.diasFerias} dias</td>
