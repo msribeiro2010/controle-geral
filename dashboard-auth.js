@@ -112,29 +112,22 @@ const buscarDadosUsuario = async () => {
     }
 };
 
-const calcularDiasFerias = () => {
-    const dataInicioInput = document.getElementById('dataInicio');
-    const dataFimInput = document.getElementById('dataFim');
-    const diasFeriasInput = document.getElementById('diasFerias');
+// Função para calcular os dias de férias
+function calcularDiasFerias(dataInicio, dataFim) {
+    if (!dataInicio || !dataFim) return 0;
     
-    if (!dataInicioInput || !dataFimInput || !diasFeriasInput) return;
-
-    const dataInicio = new Date(dataInicioInput.value);
-    const dataFim = new Date(dataFimInput.value);
-
-    if (isNaN(dataInicio.getTime()) || isNaN(dataFim.getTime())) {
-        diasFeriasInput.value = '';
-        return;
-    }
-
-    // Calcular a diferença em dias
-    const diffTime = Math.abs(dataFim - dataInicio);
+    const inicio = new Date(dataInicio);
+    const fim = new Date(dataFim);
+    
+    // Verifica se as datas são válidas
+    if (isNaN(inicio.getTime()) || isNaN(fim.getTime())) return 0;
+    
+    // Calcula a diferença em dias
+    const diffTime = Math.abs(fim - inicio);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 para incluir o último dia
-
-    diasFeriasInput.value = diffDays;
-};
-
-const MAX_RECONNECT_ATTEMPTS = 5; // Adicione esta constante se ainda não existir
+    
+    return diffDays;
+}
 
 const mostrarFeriadosDoMes = (feriados) => {
     const feriadosContainer = document.getElementById('feriados-mes');
@@ -263,60 +256,77 @@ const atualizarSaldoFerias = () => {
     }
 };
 
-const atualizarTabelaHistorico = () => {
-    if (historicoCorpo) {
-        const usuarioLogado = JSON.parse(localStorage.getItem(USUARIO_KEY) || '{}');
-        const historicoFerias = usuarioLogado.historicoFerias || [];
-        
-        historicoCorpo.innerHTML = '';
-        
-        historicoFerias.forEach((periodo, index) => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${formatarData(periodo.dataInicio)}</td>
-                <td>${formatarData(periodo.dataFim)}</td>
-                <td>${periodo.diasFerias}</td>
-                <td>${periodo.status || 'Pendente'}</td>
-                <td class="acoes">
-                    <button class="btn-editar" onclick="editarPeriodoFerias(${index})" 
-                        ${periodo.status !== 'Pendente' ? 'disabled' : ''}>
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn-excluir" onclick="excluirPeriodoFerias(${index})"
-                        ${periodo.status !== 'Pendente' ? 'disabled' : ''}>
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
-                </td>
-            `;
-            historicoCorpo.appendChild(tr);
-        });
-    }
-};
+// Atualizar os event listeners dos campos de data
+document.getElementById('dataInicio').addEventListener('change', atualizarDiasFerias);
+document.getElementById('dataFim').addEventListener('change', atualizarDiasFerias);
 
-// No início do arquivo, após as importações
+function atualizarDiasFerias() {
+    const dataInicio = document.getElementById('dataInicio').value;
+    const dataFim = document.getElementById('dataFim').value;
+    const diasFerias = calcularDiasFerias(dataInicio, dataFim);
+    
+    document.getElementById('diasFerias').value = diasFerias || '';
+}
+
+// Atualizar a função que renderiza o histórico
+function renderizarHistoricoFerias(historico) {
+    const tbody = document.getElementById('historicoCorpo');
+    tbody.innerHTML = '';
+    
+    if (!historico) return;
+    
+    Object.entries(historico).forEach(([key, periodo], index) => {
+        const tr = document.createElement('tr');
+        
+        tr.innerHTML = `
+            <td>Período ${index + 1}</td>
+            <td>${formatarData(periodo.dataInicio)}</td>
+            <td>${formatarData(periodo.dataFim)}</td>
+            <td>${periodo.diasFerias} dias</td>
+            <td>
+                <button onclick="editarPeriodoFerias(${index})" class="btn-editar" title="Editar período">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button onclick="excluirPeriodoFerias(${index})" class="btn-excluir" title="Excluir período">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </td>
+        `;
+        
+        tbody.appendChild(tr);
+    });
+}
+
+// Atualizar as funções de editar e excluir
 window.editarPeriodoFerias = async (index) => {
     try {
         const usuarioLogado = JSON.parse(localStorage.getItem(USUARIO_KEY));
         const periodo = usuarioLogado.historicoFerias[index];
 
+        if (!periodo) {
+            console.error('Período não encontrado');
+            return;
+        }
+
         // Preencher o formulário com os dados do período selecionado
         const dataInicioInput = document.getElementById('dataInicio');
         const dataFimInput = document.getElementById('dataFim');
         const diasFeriasInput = document.getElementById('diasFerias');
+        const form = document.getElementById('adicionarFeriasForm');
 
         dataInicioInput.value = periodo.dataInicio;
         dataFimInput.value = periodo.dataFim;
         diasFeriasInput.value = periodo.diasFerias;
 
         // Atualizar botão do formulário
-        const submitButton = document.querySelector('#adicionarFeriasForm button[type="submit"]');
-        submitButton.textContent = 'Atualizar Período';
+        const submitButton = form.querySelector('button[type="submit"]');
+        submitButton.innerHTML = '<i class="fas fa-save"></i> Atualizar Período';
         
         // Adicionar índice ao formulário para identificar qual período está sendo editado
-        document.getElementById('adicionarFeriasForm').dataset.editIndex = index;
+        form.dataset.editIndex = index;
 
         // Rolar até o formulário
-        document.querySelector('.adicionar-ferias-container').scrollIntoView({ behavior: 'smooth' });
+        form.scrollIntoView({ behavior: 'smooth' });
 
     } catch (error) {
         console.error('Erro ao editar período:', error);
@@ -331,6 +341,11 @@ window.excluirPeriodoFerias = async (index) => {
         }
 
         const usuarioLogado = JSON.parse(localStorage.getItem(USUARIO_KEY));
+        
+        if (!usuarioLogado.historicoFerias || !usuarioLogado.historicoFerias[index]) {
+            throw new Error('Período não encontrado');
+        }
+
         const periodoRemovido = usuarioLogado.historicoFerias[index];
 
         // Atualizar saldo de férias
@@ -347,7 +362,7 @@ window.excluirPeriodoFerias = async (index) => {
 
         // Atualizar interface
         atualizarSaldoFerias();
-        atualizarTabelaHistorico();
+        renderizarHistoricoFerias(usuarioLogado.historicoFerias);
 
         alert('Período de férias excluído com sucesso!');
 
@@ -431,7 +446,7 @@ const adicionarPeriodoFerias = async (event) => {
 
         // Atualizar interface
         atualizarSaldoFerias();
-        atualizarTabelaHistorico();
+        renderizarHistoricoFerias(usuarioLogado.historicoFerias);
 
         // Limpar formulário e resetar estado
         form.reset();
@@ -646,7 +661,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Inicializar interface
         atualizarSaldoFerias();
-        atualizarTabelaHistorico();
+        renderizarHistoricoFerias(JSON.parse(localStorage.getItem(USUARIO_KEY) || '{}').historicoFerias || {});
 
         // Carregar e mostrar feriados do mês atual
         const feriados = await carregarFeriados();
@@ -705,7 +720,7 @@ onAuthStateChanged(auth, async (user) => {
 
         // Atualizar interface
         atualizarSaldoFerias();
-        atualizarTabelaHistorico();
+        renderizarHistoricoFerias(usuarioLogado.historicoFerias || {});
 
     } catch (error) {
         console.error('Erro ao carregar dados do usuário:', error);

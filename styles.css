@@ -1256,3 +1256,84 @@ footer a:hover {
         padding: 10px 15px;
     }
 }
+
+/* Botões de ações na tabela */
+.btn-editar,
+.btn-excluir {
+    padding: 8px 12px;
+    margin: 0 4px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: transparent;
+    color: #4a5568;
+}
+
+.btn-editar {
+    color: #3182ce;
+}
+
+.btn-excluir {
+    color: #e53e3e;
+}
+
+.btn-editar:hover {
+    background: rgba(49, 130, 206, 0.1);
+    color: #2c5282;
+    transform: translateY(-1px);
+}
+
+.btn-excluir:hover {
+    background: rgba(229, 62, 62, 0.1);
+    color: #c53030;
+    transform: translateY(-1px);
+}
+
+.btn-editar:active,
+.btn-excluir:active {
+    transform: translateY(1px);
+}
+
+.btn-editar i,
+.btn-excluir i {
+    font-size: 1.1rem;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Tooltip nos botões */
+.btn-editar::after,
+.btn-excluir::after {
+    content: attr(title);
+    position: absolute;
+    background: #2d3748;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    top: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+}
+
+.btn-editar:hover::after,
+.btn-excluir:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Coluna de ações na tabela */
+td:last-child {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    position: relative;
+}
