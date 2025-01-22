@@ -159,6 +159,9 @@ if (dataInicioInput && dataFimInput && diasFeriasInput) {
     dataFimInput.addEventListener('change', calcularDiasFerias);
 }
 
+// Adicionar tipo de módulo para permitir await no escopo global
+export {};
+
 // Função para carregar feriados
 async function carregarFeriados() {
     try {
@@ -173,12 +176,10 @@ async function carregarFeriados() {
 }
 
 // Carregar feriados ao iniciar
-async function init() {
+(async () => {
     let feriados = await carregarFeriados();
     console.log('Feriados carregados:', feriados);
-}
-
-init();
+})();
 
 // Função para buscar dados do usuário no Firebase
 async function buscarDadosUsuario() {
@@ -248,249 +249,234 @@ onAuthStateChanged(auth, async (user) => {
 
     console.log('Usuário autenticado:', user);
 
-    // Carregar feriados
-    const feriados = await carregarFeriados();
-    console.log('Feriados carregados:', feriados);
+    try {
+        // Carregar feriados
+        const feriados = await carregarFeriados();
+        console.log('Feriados carregados:', feriados);
 
-    // Carregar dados do usuário
-    let usuarioFirebase = await buscarDadosUsuario() || {};
-    let usuarioLocalStorage = JSON.parse(localStorage.getItem(USUARIO_KEY)) || {};
+        // Carregar dados do usuário
+        let usuarioFirebase = await buscarDadosUsuario() || {};
+        let usuarioLocalStorage = JSON.parse(localStorage.getItem(USUARIO_KEY)) || {};
 
-    // Mesclar dados do Firebase com localStorage
-    let usuarioLogado = {
-        ...usuarioLocalStorage,
-        ...usuarioFirebase,
-        uid: user.uid,
-        email: user.email,
-        nome: usuarioFirebase.nome || usuarioLocalStorage.nome || 'Usuário',
-        username: usuarioFirebase.username || usuarioLocalStorage.username || user.email.split('@')[0]
-    };
-
-    console.log('Usuário logado:', usuarioLogado);
-
-    // Atualizar elementos do dashboard
-    if (nomeUsuarioElement) {
-        nomeUsuarioElement.textContent = usuarioLogado.nome || 'Nome não disponível';
-        console.log('Nome do usuário atualizado:', nomeUsuarioElement.textContent);
-    } else {
-        console.error('Elemento nomeUsuario não encontrado');
-    }
-
-    if (usernameElement) {
-        usernameElement.textContent = usuarioLogado.username || 'Username não disponível';
-        console.log('Username atualizado:', usernameElement.textContent);
-    } else {
-        console.error('Elemento username não encontrado');
-    }
-
-    if (emailElement) {
-        emailElement.textContent = usuarioLogado.email || 'Email não disponível';
-        console.log('Email atualizado:', emailElement.textContent);
-    } else {
-        console.error('Elemento email não encontrado');
-    }
-
-    // Variáveis para controle de férias
-    let totalFerias = usuarioLogado.totalFerias || 30;
-    let feriasUtilizadas = usuarioLogado.feriasUtilizadas || 0;
-    let historicoFerias = usuarioLogado.historicoFerias || [];
-
-    // Função para adicionar período de férias
-    function adicionarPeriodoFerias(event) {
-        event.preventDefault();
-        
-        console.group('🏖️ Adicionar Período de Férias');
-        console.log('Evento recebido:', event);
-
-        // Verificar se os elementos existem
-        if (!dataInicioInput || !dataFimInput || !diasFeriasInput) {
-            console.error('🚨 Elementos de input não encontrados', {
-                dataInicioInput,
-                dataFimInput,
-                diasFeriasInput
-            });
-            alert('Erro: Elementos do formulário não encontrados.');
-            console.groupEnd();
-            return;
-        }
-        
-        const dataInicio = dataInicioInput.value;
-        const dataFim = dataFimInput.value;
-        const diasFerias = parseInt(diasFeriasInput.value);
-
-        console.log('📅 Dados de entrada:', { 
-            dataInicio, 
-            dataFim, 
-            diasFerias 
-        });
-
-        // Validações
-        if (!dataInicio || !dataFim || isNaN(diasFerias)) {
-            console.error('🚫 Dados inválidos');
-            alert('Por favor, preencha todos os campos corretamente.');
-            console.groupEnd();
-            return;
-        }
-
-        console.log('Estado atual:', { 
-            totalFerias, 
-            feriasUtilizadas, 
-            historicoFerias 
-        });
-
-        // Criar período formatado
-        const periodo = `${formatarData(dataInicio)} a ${formatarData(dataFim)}`;
-
-        // Verificar se já existem 3 períodos
-        if (historicoFerias.length >= 3) {
-            console.warn('Limite de períodos atingido');
-            alert('Limite de 3 períodos de férias atingido.');
-            console.groupEnd();
-            return;
-        }
-
-        // Verificar se há saldo suficiente de férias
-        if (diasFerias > (totalFerias - feriasUtilizadas)) {
-            console.warn('Saldo de férias insuficiente');
-            alert('Saldo de férias insuficiente.');
-            console.groupEnd();
-            return;
-        }
-
-        // Verificar feriados no período
-        const feriadosNoPeriodo = feriados.filter(feriado => {
-            const dataFeriado = new Date(feriado.data.split('/').reverse().join('-'));
-            const dataInicioObj = new Date(dataInicio);
-            const dataFimObj = new Date(dataFim);
-            return dataFeriado >= dataInicioObj && dataFeriado <= dataFimObj;
-        });
-
-        if (feriadosNoPeriodo.length > 0) {
-            const nomesFeriados = feriadosNoPeriodo.map(f => f.nome).join(', ');
-            const confirmacao = confirm(`Existem feriados no período selecionado: ${nomesFeriados}. Deseja continuar?`);
-            
-            if (!confirmacao) {
-                console.warn('Adição de férias cancelada pelo usuário');
-                console.groupEnd();
-                return;
-            }
-        }
-
-        // Adicionar período de férias
-        const novoPeriodo = { 
-            periodo: `${formatarData(dataInicio)} a ${formatarData(dataFim)}`, 
-            dataInicio, 
-            dataFim, 
-            diasFerias 
-        };
-        historicoFerias.push(novoPeriodo);
-        feriasUtilizadas += diasFerias;
-
-        console.log('Novo período adicionado:', novoPeriodo);
-        console.log('Histórico de férias atualizado:', historicoFerias);
-        console.log('Férias utilizadas:', feriasUtilizadas);
-
-        // Preparar dados para salvar
-        const dadosAtualizados = {
-            totalFerias,
-            feriasUtilizadas,
-            historicoFerias
+        // Lógica de merge de dados
+        let usuarioLogado = {
+            ...usuarioLocalStorage,
+            ...usuarioFirebase
         };
 
-        // Salvar no Firebase
-        const userId = user.uid;
-        const userRef = ref(database, 'users/' + userId);
-
-        try {
-            await salvarPeriodoFerias(dadosAtualizados);
-        } catch (error) {
-            console.error('Erro ao salvar férias:', error);
-            alert('Não foi possível salvar as férias. Tente novamente.');
-            console.groupEnd();
-            return;
-        }
-
-        // Atualizar usuário logado
-        usuarioLogado.feriasUtilizadas = feriasUtilizadas;
-        usuarioLogado.historicoFerias = historicoFerias;
+        // Atualizar localStorage
         localStorage.setItem(USUARIO_KEY, JSON.stringify(usuarioLogado));
 
-        // Atualizar visualização
+        // Atualizar elementos da interface
+        document.getElementById('employee-name').textContent = usuarioLogado.nome || 'Usuário';
+        document.getElementById('employee-username').textContent = usuarioLogado.username || '';
+        document.getElementById('employee-email').textContent = usuarioLogado.email || '';
+
+        // Atualizar saldo de férias
         atualizarSaldoFerias();
         atualizarTabelaHistorico();
 
-        // Limpar formulário
-        dataInicioInput.value = '';
-        dataFimInput.value = '';
-        diasFeriasInput.value = '';
-
-        console.log('Férias salvas com sucesso');
-        console.groupEnd();
+    } catch (error) {
+        console.error('Erro durante o carregamento:', error);
+        handleConnectionError(error);
     }
+});
 
-    // Funções de atualização
-    function atualizarSaldoFerias() {
-        if (saldoFeriasElement) {
-            const saldoAtual = totalFerias - feriasUtilizadas;
-            saldoFeriasElement.textContent = `${saldoAtual} dias`;
-            console.log('Saldo de férias atualizado:', saldoAtual);
-        }
-    }
+// Função para adicionar período de férias
+function adicionarPeriodoFerias(event) {
+    event.preventDefault();
+    
+    console.group('🏖️ Adicionar Período de Férias');
+    console.log('Evento recebido:', event);
 
-    function atualizarTabelaHistorico() {
-        if (historicoCorpo) {
-            historicoCorpo.innerHTML = '';
-            console.log('Histórico de férias a ser renderizado:', historicoFerias);
-            
-            historicoFerias.forEach((entry, index) => {
-                console.log('Renderizando entrada:', entry);
-                const linha = document.createElement('tr');
-                
-                // Formatar datas para exibição
-                const dataInicioFormatada = formatarData(entry.dataInicio);
-                const dataFimFormatada = formatarData(entry.dataFim);
-
-                linha.innerHTML = `
-                    <td>${entry.periodo}</td>
-                    <td>${dataInicioFormatada}</td>
-                    <td>${dataFimFormatada}</td>
-                    <td>${entry.diasFerias} dias</td>
-                    <td>
-                        <button onclick="editarPeriodoFerias(${index})" class="btn-editar">
-                            <i class="fas fa-edit"></i> Editar
-                        </button>
-                        <button onclick="excluirPeriodoFerias(${index})" class="btn-excluir">
-                            <i class="fas fa-trash"></i> Excluir
-                        </button>
-                    </td>
-                `;
-                historicoCorpo.appendChild(linha);
-            });
-            console.log('Tabela de histórico de férias atualizada');
-        } else {
-            console.error('Elemento historicoCorpo não encontrado');
-        }
-    }
-
-    // Adicionar event listener para o formulário
-    if (adicionarFeriasForm) {
-        adicionarFeriasForm.removeEventListener('submit', adicionarPeriodoFerias);
-        adicionarFeriasForm.addEventListener('submit', adicionarPeriodoFerias);
-        console.log('Event listener de adicionar férias configurado');
-        console.log('Formulário:', adicionarFeriasForm);
-        console.log('Inputs:', {
-            dataInicio: dataInicioInput,
-            dataFim: dataFimInput,
-            diasFerias: diasFeriasInput
+    // Verificar se os elementos existem
+    if (!dataInicioInput || !dataFimInput || !diasFeriasInput) {
+        console.error('🚨 Elementos de input não encontrados', {
+            dataInicioInput,
+            dataFimInput,
+            diasFeriasInput
         });
-    } else {
-        console.error('Formulário de férias não encontrado');
+        alert('Erro: Elementos do formulário não encontrados.');
+        console.groupEnd();
+        return;
+    }
+    
+    const dataInicio = dataInicioInput.value;
+    const dataFim = dataFimInput.value;
+    const diasFerias = parseInt(diasFeriasInput.value);
+
+    console.log('📅 Dados de entrada:', { 
+        dataInicio, 
+        dataFim, 
+        diasFerias 
+    });
+
+    // Validações
+    if (!dataInicio || !dataFim || isNaN(diasFerias)) {
+        console.error('🚫 Dados inválidos');
+        alert('Por favor, preencha todos os campos corretamente.');
+        console.groupEnd();
+        return;
     }
 
-    // Chamar funções iniciais
+    console.log('Estado atual:', { 
+        totalFerias, 
+        feriasUtilizadas, 
+        historicoFerias 
+    });
+
+    // Criar período formatado
+    const periodo = `${formatarData(dataInicio)} a ${formatarData(dataFim)}`;
+
+    // Verificar se já existem 3 períodos
+    if (historicoFerias.length >= 3) {
+        console.warn('Limite de períodos atingido');
+        alert('Limite de 3 períodos de férias atingido.');
+        console.groupEnd();
+        return;
+    }
+
+    // Verificar se há saldo suficiente de férias
+    if (diasFerias > (totalFerias - feriasUtilizadas)) {
+        console.warn('Saldo de férias insuficiente');
+        alert('Saldo de férias insuficiente.');
+        console.groupEnd();
+        return;
+    }
+
+    // Verificar feriados no período
+    const feriadosNoPeriodo = feriados.filter(feriado => {
+        const dataFeriado = new Date(feriado.data.split('/').reverse().join('-'));
+        const dataInicioObj = new Date(dataInicio);
+        const dataFimObj = new Date(dataFim);
+        return dataFeriado >= dataInicioObj && dataFeriado <= dataFimObj;
+    });
+
+    if (feriadosNoPeriodo.length > 0) {
+        const nomesFeriados = feriadosNoPeriodo.map(f => f.nome).join(', ');
+        const confirmacao = confirm(`Existem feriados no período selecionado: ${nomesFeriados}. Deseja continuar?`);
+        
+        if (!confirmacao) {
+            console.warn('Adição de férias cancelada pelo usuário');
+            console.groupEnd();
+            return;
+        }
+    }
+
+    // Adicionar período de férias
+    const novoPeriodo = { 
+        periodo: `${formatarData(dataInicio)} a ${formatarData(dataFim)}`, 
+        dataInicio, 
+        dataFim, 
+        diasFerias 
+    };
+    historicoFerias.push(novoPeriodo);
+    feriasUtilizadas += diasFerias;
+
+    console.log('Novo período adicionado:', novoPeriodo);
+    console.log('Histórico de férias atualizado:', historicoFerias);
+    console.log('Férias utilizadas:', feriasUtilizadas);
+
+    // Preparar dados para salvar
+    const dadosAtualizados = {
+        totalFerias,
+        feriasUtilizadas,
+        historicoFerias
+    };
+
+    // Salvar no Firebase
+    const userId = auth.currentUser.uid;
+    const userRef = ref(database, 'users/' + userId);
+
+    try {
+        await salvarPeriodoFerias(dadosAtualizados);
+    } catch (error) {
+        console.error('Erro ao salvar férias:', error);
+        alert('Não foi possível salvar as férias. Tente novamente.');
+        console.groupEnd();
+        return;
+    }
+
+    // Atualizar usuário logado
+    usuarioLogado.feriasUtilizadas = feriasUtilizadas;
+    usuarioLogado.historicoFerias = historicoFerias;
+    localStorage.setItem(USUARIO_KEY, JSON.stringify(usuarioLogado));
+
+    // Atualizar visualização
     atualizarSaldoFerias();
     atualizarTabelaHistorico();
-});
+
+    // Limpar formulário
+    dataInicioInput.value = '';
+    dataFimInput.value = '';
+    diasFeriasInput.value = '';
+
+    console.log('Férias salvas com sucesso');
+    console.groupEnd();
+}
+
+// Funções de atualização
+function atualizarSaldoFerias() {
+    if (saldoFeriasElement) {
+        const saldoAtual = totalFerias - feriasUtilizadas;
+        saldoFeriasElement.textContent = `${saldoAtual} dias`;
+        console.log('Saldo de férias atualizado:', saldoAtual);
+    }
+}
+
+function atualizarTabelaHistorico() {
+    if (historicoCorpo) {
+        historicoCorpo.innerHTML = '';
+        console.log('Histórico de férias a ser renderizado:', historicoFerias);
+        
+        historicoFerias.forEach((entry, index) => {
+            console.log('Renderizando entrada:', entry);
+            const linha = document.createElement('tr');
+            
+            // Formatar datas para exibição
+            const dataInicioFormatada = formatarData(entry.dataInicio);
+            const dataFimFormatada = formatarData(entry.dataFim);
+
+            linha.innerHTML = `
+                <td>${entry.periodo}</td>
+                <td>${dataInicioFormatada}</td>
+                <td>${dataFimFormatada}</td>
+                <td>${entry.diasFerias} dias</td>
+                <td>
+                    <button onclick="editarPeriodoFerias(${index})" class="btn-editar">
+                        <i class="fas fa-edit"></i> Editar
+                    </button>
+                    <button onclick="excluirPeriodoFerias(${index})" class="btn-excluir">
+                        <i class="fas fa-trash"></i> Excluir
+                    </button>
+                </td>
+            `;
+            historicoCorpo.appendChild(linha);
+        });
+        console.log('Tabela de histórico de férias atualizada');
+    } else {
+        console.error('Elemento historicoCorpo não encontrado');
+    }
+}
+
+// Adicionar event listener para o formulário
+if (adicionarFeriasForm) {
+    adicionarFeriasForm.removeEventListener('submit', adicionarPeriodoFerias);
+    adicionarFeriasForm.addEventListener('submit', adicionarPeriodoFerias);
+    console.log('Event listener de adicionar férias configurado');
+    console.log('Formulário:', adicionarFeriasForm);
+    console.log('Inputs:', {
+        dataInicio: dataInicioInput,
+        dataFim: dataFimInput,
+        diasFerias: diasFeriasInput
+    });
+} else {
+    console.error('Formulário de férias não encontrado');
+}
+
+// Chamar funções iniciais
+atualizarSaldoFerias();
+atualizarTabelaHistorico();
 
 // Função para salvar período de férias
 async function salvarPeriodoFerias(dadosAtualizados) {
