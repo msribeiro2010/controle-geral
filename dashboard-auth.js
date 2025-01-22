@@ -173,8 +173,12 @@ async function carregarFeriados() {
 }
 
 // Carregar feriados ao iniciar
-let feriados = await carregarFeriados();
-console.log('Feriados carregados:', feriados);
+async function init() {
+    let feriados = await carregarFeriados();
+    console.log('Feriados carregados:', feriados);
+}
+
+init();
 
 // Função para buscar dados do usuário no Firebase
 async function buscarDadosUsuario() {
@@ -244,7 +248,11 @@ onAuthStateChanged(auth, async (user) => {
 
     console.log('Usuário autenticado:', user);
 
-    // Buscar dados do usuário
+    // Carregar feriados
+    const feriados = await carregarFeriados();
+    console.log('Feriados carregados:', feriados);
+
+    // Carregar dados do usuário
     let usuarioFirebase = await buscarDadosUsuario() || {};
     let usuarioLocalStorage = JSON.parse(localStorage.getItem(USUARIO_KEY)) || {};
 
